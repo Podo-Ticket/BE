@@ -1,0 +1,14 @@
+{
+  "name": "podo-ticket",
+  "version": "1.0.0",
+  "description": "포도 티켓 BE",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}
