@@ -8,6 +8,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 
+// 메인 - 수정 예정
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
