@@ -9,18 +9,16 @@ app.use(express.json());
 app.use(cors());
 
 // 메인 - 수정 예정
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+const indexRouter = require('./routes/index');
+app.use('/', indexRouter);
 
-app.listen(PORT, () => {
-  console.log(`http://localhost:${PORT}`)
-})
+app.get('*', (req, res) => {
+  res.send('404');
+});
 
-sequelize.sync({force: false})
-    .then(()=>{
-        console.log("DB Connected Success");
+sequelize.sync({force: false}).then(()=>{
+    app.listen(PORT, () => {
+        console.log(`http://localhost:${PORT}`);
     })
-    .catch((err)=> {
-        console.error(err);
-    });
+}
+);
