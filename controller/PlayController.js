@@ -1,13 +1,13 @@
 const { checkFile } = require('../utils/fileUtil');
 
-const { Play } = require('../models');
+const { Play, Schedule } = require('../models');
 
 // 공연 추가
 exports.postPlay = async (req, res) => {
     try {
         const { title, place } = req.body;
-        // 파일 유무 확인
-        const filePath = checkFile(req.file);
+
+        const filePath = checkFile(req.file); // 파일 유무 확인
 
         const play = await Play.create({
             title: title,
@@ -26,7 +26,12 @@ exports.postSchedule = async (req, res) => {
     try {
         const { playId, dateTime } = req.body;
 
+        const schedule = await Schedule.create({
+            play_id: playId,
+            date_time: dateTime
+        });
 
+        res.send({ schedule: schedule });
     }catch (err) {
         console.log(err);
     }

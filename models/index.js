@@ -12,6 +12,7 @@ const sequelize = new Sequelize(
     {
         host: process.env.DB_HOST,
         dialect: process.env.DB_DIALECT,
+        timezone: '+09:00'
     }
 );
 
@@ -50,6 +51,7 @@ db.Seat = Seat;
 db.Reservation = Reservation;
 db.Survey = Survey;
 db.Play = Play;
+db.Schedule = Schedule;
 
 db.sequelize = sequelize;
 

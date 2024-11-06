@@ -55,5 +55,6 @@ const uploadImg = multer({
 });
 
 router.post("/post", uploadImg.single('poster'), controller.postPlay);
+router.post("/schedule", controller.postSchedule);
 
 module.exports = router;
