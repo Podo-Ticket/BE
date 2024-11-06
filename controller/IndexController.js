@@ -5,14 +5,23 @@ exports.index = async (req, res) => {
     try {
         let { playId } = req.query;
 
+        if(!playId) {
+            return res.status(400).send({ 
+                error: "올바르지 않은 공연 ID" 
+            });
+        }
+
         let play = await Play.findOne({
             where: { id: playId }
         })
 
-        // 포스터 전달 가공 필요
+        if(!play) {
+            return res.status(404).send({ 
+                error: "공연 조회 불가" 
+            });
+        }
 
         res.send({ play: play });
-        // res.send({ result: true, message: "Hello World!" }); // nfc 태그 시, 진입 가능
     } catch (err) {
         console.log(err);
     }
