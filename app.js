@@ -12,6 +12,10 @@ app.use(cors());
 const indexRouter = require('./routes/index');
 app.use('/', indexRouter);
 
+// 공연 정보
+const playRouter = require('./routes/play');
+app.use("/play", playRouter);
+
 app.get('*', (req, res) => {
   res.send('404');
 });

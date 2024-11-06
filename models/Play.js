@@ -16,11 +16,6 @@ const Play = (sequelize) => {
                 allowNull: false,
                 comment: '공연 제목',
             },
-            date_time: {
-                type: DataTypes.DATE,
-                allowNull: false,
-                comment: '공연 일시',
-            },
             place: {
                 type: DataTypes.STRING,
                 allowNull: false,
