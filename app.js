@@ -16,6 +16,10 @@ app.use('/', indexRouter);
 const playRouter = require('./routes/play');
 app.use("/play", playRouter);
 
+// 예약 정보
+const userRouter = require('./routes/user');
+app.use("/user", userRouter);
+
 app.get('*', (req, res) => {
   res.send('404');
 });
