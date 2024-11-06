@@ -3,6 +3,7 @@ const router = express.Router();
 const controller = require('../controller/PlayController');
 
 const multer = require('multer');
+const path = require('path');
 const fs = require('fs');
 
 // 업로드 이미지 설정
@@ -53,4 +54,6 @@ const uploadImg = multer({
     },
 });
 
-router.post("/postPlay", uploadImg.single('poster'), controller.postPlay);
+router.post("/post", uploadImg.single('poster'), controller.postPlay);
+
+module.exports = router;
