@@ -21,11 +21,16 @@ const Seat = require('./Seat')(sequelize);
 const Reservation = require('./Reservation')(sequelize);
 const Survey = require('./Survey')(sequelize);
 const Play = require('./Play')(sequelize);
+const Schedule = require('./Schedule')(sequelize);
 
 // 모델간의 관계 설정
-// Play : Seat = 1 : N
-Play.hasMany(Seat, { foreignKey: 'play_id', sourceKey: 'id' });
-Seat.belongsTo(Play, { foreignKey: 'play_id', targetKey: 'id' });
+// Play : Schedule = 1 : N
+Play.hasMany(Schedule, { foreignKey: 'play_id', sourceKey: 'id' });
+Schedule.belongsTo(Play, { foreignKey: 'play_id', targetKey: 'id' });
+
+// Schedule : Seat = 1 : N
+Schedule.hasMany(Seat, { foreignKey: 'schedule_id', sourceKey: 'id' });
+Seat.belongsTo(Schedule, { foreignKey: 'schedule_id', targetKey: 'id' });
 
 // Reservation : Seat = 1 : N
 Reservation.hasMany(Seat, { foreignKey: 'reservation_id', sourceKey: 'id' });
