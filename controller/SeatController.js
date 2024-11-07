@@ -63,9 +63,12 @@ exports.checkReserved = async (req, res) => {
             }
         })
 
-        if (reservedSeats > 0) {
+        if (reservedSeats > 0)
             return res.send({ success: false });
-        }
+
+
+        // 예매 대기 상태 설정
+        // await Seat.bulkCreate(seatConditions);
 
         return res.send({
             success: true,

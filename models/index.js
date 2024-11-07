@@ -19,7 +19,6 @@ const sequelize = new Sequelize(
 // 모델 모듈 불러오기
 const User = require('./User')(sequelize);
 const Seat = require('./Seat')(sequelize);
-const Reservation = require('./Reservation')(sequelize);
 const Survey = require('./Survey')(sequelize);
 const Play = require('./Play')(sequelize);
 const Schedule = require('./Schedule')(sequelize);
@@ -33,13 +32,9 @@ Schedule.belongsTo(Play, { foreignKey: 'play_id', targetKey: 'id' });
 Schedule.hasMany(Seat, { foreignKey: 'schedule_id', sourceKey: 'id' });
 Seat.belongsTo(Schedule, { foreignKey: 'schedule_id', targetKey: 'id' });
 
-// Reservation : Seat = 1 : N
-Reservation.hasMany(Seat, { foreignKey: 'reservation_id', sourceKey: 'id' });
-Seat.belongsTo(Reservation, { foreignKey: 'reservation_id', targetKey: 'id' });
-
-// User : Reservation = 1 : 1
-User.hasOne(Reservation, { foreignKey: 'user_id', sourceKey: 'id' });
-Reservation.belongsTo(User, { foreignKey: 'user_id', targetKey: 'id' });
+// User : Seat = 1 : N
+User.hasMany(Seat, { foreignKey: 'user_id', sourceKey: 'id' });
+Seat.belongsTo(User, { foreignKey: 'user_id', targetKey: 'id' });
 
 // User : Survey = 1 : 1
 User.hasOne(Survey, { foreignKey: 'user_id', sourceKey: 'id' });
@@ -48,7 +43,6 @@ Survey.belongsTo(User, { foreignKey: 'user_id', targetKey: 'id' });
 // 모델 DB 객체에 저장
 db.User = User;
 db.Seat = Seat;
-db.Reservation = Reservation;
 db.Survey = Survey;
 db.Play = Play;
 db.Schedule = Schedule;
