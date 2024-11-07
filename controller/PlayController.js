@@ -23,6 +23,7 @@ exports.postPlay = async (req, res) => {
 
         res.send(true);
     }catch (err) {
+        console.error(err);
         res.status(500).send("Internal server error");
     }
 };
@@ -45,6 +46,7 @@ exports.postSchedule = async (req, res) => {
 
         res.send(true);
     }catch (err) {
+        console.error(err);
         res.status(500).send("Internal server error");
     }
 }

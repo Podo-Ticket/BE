@@ -1,11 +1,11 @@
-const {Seat} = require('../models');
+const { Seat } = require('../models');
 
 // 좌석 화면 - 예약된 좌석만 전달
 exports.showSeats = async (req, res) => {
     try {
-        const { playId } = req.query;
+        const { scheduleId } = req.query;
 
-        if(!playId) {
+        if(!scheduleId) {
             return res.status(400).send({
                 error: "올바르지 않은 공연 ID"
             });
@@ -13,12 +13,13 @@ exports.showSeats = async (req, res) => {
 
         const seats = await Seat.findAll({
             where: {
-                play_id: playId
+                schedule_id: scheduleId
             }
         });
 
         res.send({ seats: seats });
     } catch (err) {
+        console.error(err);
         res.status(500).send("Internal server error");
     }
 }

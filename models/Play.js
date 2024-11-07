@@ -16,11 +16,6 @@ const Play = (sequelize) => {
                 allowNull: false,
                 comment: '공연 제목',
             },
-            place: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                comment: '공연 장소',
-            },
             poster: {
                 type: DataTypes.STRING,
                 allowNull: false,

@@ -30,6 +30,7 @@ exports.checkReservation = async (req, res) => {
         else
             return res.send(false);
     } catch (err) {
+        console.error(err);
         res.status(500).send("Internal server error");
     }
 };
