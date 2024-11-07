@@ -64,10 +64,13 @@ exports.checkReserved = async (req, res) => {
         })
 
         if (reservedSeats > 0) {
-            return res.send(false);
+            return res.send({ success: false });
         }
 
-        return res.send(true);
+        return res.send({
+            success: true,
+            seats: parsedSeats
+        });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
