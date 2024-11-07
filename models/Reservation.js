@@ -11,7 +11,7 @@ const Reservation = (sequelize) => {
                 autoIncrement: true,
                 comment: '예약 pri 키',
             },
-            status: {
+            state: {
                 type: DataTypes.BOOLEAN,
                 allowNull: false,
                 comment: '예약 상태',
