@@ -17,8 +17,14 @@ exports.checkReservation = async (req, res) => {
             }
         });
 
-        if (user)
+        if (user) {
+            req.session.userInfo={
+                phoneNumber: user.phoneNumber,
+                name: user.name,
+            }
+
             return res.send(true);
+        }
         else
             return res.send(false);
     } catch (err) {
