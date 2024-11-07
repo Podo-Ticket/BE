@@ -68,7 +68,11 @@ exports.checkReserved = async (req, res) => {
 
 
         // 예매 대기 상태 설정
-        // await Seat.bulkCreate(seatConditions);
+        await Seat.bulkCreate(seatConditions.map(seat => ({
+            ...seat,
+            user_id: req.session.userInfo.id,
+        }))
+    );
 
         return res.send({
             success: true,

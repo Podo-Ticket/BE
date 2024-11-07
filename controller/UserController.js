@@ -21,6 +21,7 @@ exports.checkReservation = async (req, res) => {
 
         if (user) {
             req.session.userInfo={
+                id: user.id,
                 phoneNumber: user.phoneNumber,
                 name: user.name,
             }
