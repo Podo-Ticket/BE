@@ -17,11 +17,20 @@ exports.checkReservation = async (req, res) => {
             }
         });
 
-        if (user)
+        // 이미 예약을 했을 경우 추가 필요
+
+        if (user) {
+            req.session.userInfo={
+                phoneNumber: user.phoneNumber,
+                name: user.name,
+            }
+
             return res.send(true);
+        }
         else
             return res.send(false);
     } catch (err) {
+        console.error(err);
         res.status(500).send("Internal server error");
     }
 };

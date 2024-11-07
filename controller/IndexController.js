@@ -29,6 +29,7 @@ exports.index = async (req, res) => {
 
         res.send({ play: play });
     } catch (err) {
+        console.error(err);
         res.status(500).send("Internal server error");
     }
 };
