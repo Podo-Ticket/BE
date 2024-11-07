@@ -1,19 +1,25 @@
 const { Play } = require('../models');
+const { Schedule } = require('../models');
 
 // main 화면
 exports.index = async (req, res) => {
     try {
-        let { playId } = req.query;
+        let { scheduleId } = req.query;
 
-        if(!playId) {
+        if(!scheduleId) {
             return res.status(400).send({ 
-                error: "올바르지 않은 공연 ID" 
+                error: "올바르지 않은 공연 일시 ID" 
             });
         }
 
-        let play = await Play.findOne({
-            where: { id: playId }
-        })
+        const play = await Schedule.findOne({
+            attributes: ['id', 'date_time'],
+            where: { id: scheduleId },
+            include: {
+                model: Play,
+                attributes: ['id', 'title', 'poster']
+            },
+        });
 
         if(!play) {
             return res.status(404).send({ 
