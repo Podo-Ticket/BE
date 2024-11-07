@@ -7,7 +7,7 @@ exports.showSeats = async (req, res) => {
 
         if(!scheduleId) {
             return res.status(400).send({
-                error: "올바르지 않은 공연 ID"
+                error: "올바르지 않은 공연 일시 ID"
             });
         }
 
