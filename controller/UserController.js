@@ -17,6 +17,8 @@ exports.checkReservation = async (req, res) => {
             }
         });
 
+        // 이미 예약을 했을 경우 추가 필요
+
         if (user) {
             req.session.userInfo={
                 phoneNumber: user.phoneNumber,
