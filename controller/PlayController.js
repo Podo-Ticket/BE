@@ -5,11 +5,11 @@ const { Play, Schedule } = require('../models');
 // 공연 추가
 exports.postPlay = async (req, res) => {
     try {
-        const { title, place } = req.body;
+        const { title } = req.body;
 
-        if(!title || !place) {
+        if(!title) {
             return res.status(400).send({
-                error: "올바르지 않은 공연 제목 또는 장소"
+                error: "올바르지 않은 공연 제목"
             });
         }
 
@@ -17,7 +17,6 @@ exports.postPlay = async (req, res) => {
 
         await Play.create({
             title: title,
-            place: place,
             poster: filePath
         });
 

@@ -21,6 +21,12 @@ const User = (sequelize) => {
                 allowNull: false,
                 comment: '사용자 전화번호',
             },
+            state: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+                comment: '예약 상태',
+            }
         },
         {
             tableName: 'user',
