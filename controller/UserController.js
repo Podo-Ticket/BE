@@ -97,7 +97,7 @@ exports.showList = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 공연 회차 선택
 exports.showSchedule = async (req, res) => {
@@ -116,7 +116,7 @@ exports.showSchedule = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 명단 추가 - 공연 회차 보여주기
 exports.showScheduleAdmin = async (req, res) => {
@@ -196,7 +196,7 @@ exports.reservationAdmin = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 명단 확인 - 사용자 정보 보여주기
 exports.showAudienceInfo = async (req, res) => {
@@ -228,7 +228,7 @@ exports.showAudienceInfo = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 예매 삭제 확인
 exports.deleteAudience = async (req, res) => {
@@ -258,7 +258,7 @@ exports.deleteAudience = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 수정 중 - 회원 정보 보여주기
 exports.showUpdateAudienceInfo = async (req, res) => {
@@ -294,7 +294,7 @@ exports.showUpdateAudienceInfo = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 수정 중 - 회원 정보 수정
 exports.updateAudience = async (req, res) => {
@@ -345,4 +345,4 @@ exports.updateAudience = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};

@@ -87,3 +87,54 @@ exports.reservation = async (req, res) => {
         res.status(500).send("Internal server error");
     }
 };
+
+// admin
+// 현장 예매 관리 리스트
+exports.showOnSite = async (req, res) => {
+    try {
+        const { scheduleId, name, phoneNumber, approve } = req.query;
+
+        if (!scheduleId) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID"
+            });
+        }
+
+        const whereClause = {
+            schedule_id: scheduleId,
+            on_site: true
+        }
+
+        if (name) {
+            whereClause.name = {
+                [Op.like]: `%${name}%`
+            };
+        }
+
+        if (phoneNumber) {
+            whereClause.phone_number = {
+                [Op.like]: `%${phoneNumber}%`
+            };
+        }
+
+        if (approve) {
+            whereClause.approve = approve;
+        }
+
+        const users = await User.findAll({
+            attributes: ['id', 'name', 'phone_number', 'head_count', 'state', 'approve'],
+            where: whereClause,
+            order: [
+                ['name', 'ASC'],
+                ['phone_number', 'ASC']
+            ]
+        });
+
+        const approvalCnt = users.filter(user => user.approve === true).length;
+
+        res.send({ total: users.length, approvalCnt: approvalCnt, users: users });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+};

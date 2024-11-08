@@ -7,4 +7,7 @@ const controller = require('../controller/ReservationController');
 router.get("/", controller.showSchedule);
 router.post("/",controller.reservation);
 
+// admin
+router.get("/admin", isAdmin, controller.showOnSite);
+
 module.exports = router;

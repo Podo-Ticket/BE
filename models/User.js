@@ -37,6 +37,12 @@ const User = (sequelize) => {
                 allowNull: false,
                 defaultValue: false,
                 comment: '현장 예매 여부',
+            },
+            approve: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+                comment: '현장 예매 수락 여부',
             }
         },
         {
