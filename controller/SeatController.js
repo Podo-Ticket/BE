@@ -29,6 +29,7 @@ exports.showSeats = async (req, res) => {
 exports.checkReserved = async (req, res) => {
     try {
         const { scheduleId, seats } = req.query; // seats는 { row, number } 형태의 객체 - 인코딩 필요
+        const { headCount } = req.session.userInfo;
 
         if (!scheduleId || !seats) {
             return res.status(400).send({
@@ -48,6 +49,13 @@ exports.checkReserved = async (req, res) => {
         if (!Array.isArray(parsedSeats)) {
             return res.status(400).send({
                 error: "좌석 정보는 배열이어야 합니다"
+            });
+        }
+
+        // 선택한 좌석 수와 예매 인원 대조
+        if(parsedSeats.length !== headCount) {
+            return res.status(400).send({
+                error: "예매 인원과 선택한 좌석 수가 일치하지 않습니다"
             });
         }
 

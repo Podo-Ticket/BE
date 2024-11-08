@@ -30,17 +30,18 @@ exports.postPlay = async (req, res) => {
 // 공연 일정 추가
 exports.postSchedule = async (req, res) => {
     try {
-        const { playId, dateTime } = req.body;
+        const { playId, dateTime, availableSeats } = req.body;
 
-        if(!playId || !dateTime) {
+        if(!playId || !dateTime || !availableSeats) {
             return res.status(400).send({
-                error: "올바르지 않은 공연 ID 또는 일정"
+                error: "올바르지 않은 공연 ID 또는 일정 또는 좌석 수"
             });
         }
 
         await Schedule.create({
             play_id: playId,
-            date_time: dateTime
+            date_time: dateTime,
+            available_seats: availableSeats
         });
 
         res.send(true);

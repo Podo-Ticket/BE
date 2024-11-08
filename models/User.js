@@ -21,11 +21,16 @@ const User = (sequelize) => {
                 allowNull: false,
                 comment: '사용자 전화번호',
             },
+            head_count: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                comment: '예매 인원',
+            },
             state: {
                 type: DataTypes.BOOLEAN,
                 allowNull: false,
                 defaultValue: false,
-                comment: '예약 상태',
+                comment: '발권 상태',
             }
         },
         {

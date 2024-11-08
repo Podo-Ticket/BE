@@ -62,6 +62,10 @@ app.use("/ticket", ticketRouter);
 const surveyRouter = require('./routes/survey');
 app.use("/survey", surveyRouter);
 
+// 현장 예매
+const reservationRouter = require('./routes/reservation');
+app.use("/reservation", reservationRouter);
+
 app.get('*', (req, res) => {
   res.send('404');
 });

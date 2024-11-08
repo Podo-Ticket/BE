@@ -22,8 +22,9 @@ exports.checkReservation = async (req, res) => {
         if (user) {
             req.session.userInfo={
                 id: user.id,
-                phoneNumber: user.phoneNumber,
+                phoneNumber: user.phone_number,
                 name: user.name,
+                headCount: user.head_count
             }
 
             return res.send(true);
