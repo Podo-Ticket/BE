@@ -54,8 +54,7 @@ exports.enterAdmin = async (req, res) => {
         const { code }  = req.query;
 
         let adminCode = "JAKGONG"; // 작은 공간 관리자 코드
-
-        console.log(code);
+        let play_id = 1; // 작은 공간 공연 id
 
         if (code !== adminCode) {
             return res.status(400).send({
@@ -64,7 +63,8 @@ exports.enterAdmin = async (req, res) => {
         }
 
         req.session.admin = {
-            code: adminCode
+            code: adminCode,
+            play: play_id
         }
 
         res.send({ success: true });
