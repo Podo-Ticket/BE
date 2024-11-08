@@ -52,7 +52,7 @@ exports.checkReservation = async (req, res) => {
 // 명단 관리
 exports.showList = async (req, res) => {
     try {
-        const { scheduleId, name, phoneNumber } = req.query;
+        const { scheduleId, name, phoneNumber, state } = req.query;
 
         if (!scheduleId) {
             return res.status(400).send({
@@ -75,6 +75,10 @@ exports.showList = async (req, res) => {
             whereClause.phone_number = {
                 [Op.like]: `%${phoneNumber}%`
             };
+        }
+
+        if (state) {
+            whereClause.state = state;
         }
 
         const users = await User.findAll({
