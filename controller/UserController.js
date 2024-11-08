@@ -79,7 +79,11 @@ exports.showList = async (req, res) => {
 
         const users = await User.findAll({
             attributes:['id', 'name', 'phone_number', 'head_count', 'state'],
-            where: whereClause
+            where: whereClause,
+            order: [
+                ['name', 'ASC'],
+                ['phone_number', 'ASC']
+            ]
         });
 
         const ticketingCnt = users.filter(user => user.state === true).length;
