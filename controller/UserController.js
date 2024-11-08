@@ -1,5 +1,6 @@
 const { User } = require('../models');
 
+// user
 // 예약 확인
 exports.checkReservation = async (req, res) => {
     try {
@@ -25,7 +26,7 @@ exports.checkReservation = async (req, res) => {
                 });
             }
 
-            req.session.userInfo={
+            req.session.userInfo = {
                 id: user.id,
                 phoneNumber: user.phone_number,
                 name: user.name,
@@ -45,3 +46,30 @@ exports.checkReservation = async (req, res) => {
         res.status(500).send("Internal server error");
     }
 };
+
+// admin
+// 접속
+exports.enterAdmin = async (req, res) => {
+    try {
+        const { code }  = req.query;
+
+        let adminCode = "JAKGONG"; // 작은 공간 관리자 코드
+        let play_id = 1; // 작은 공간 공연 id
+
+        if (code !== adminCode) {
+            return res.status(400).send({
+                error: "잘못된 인증코드"
+            });
+        }
+
+        req.session.admin = {
+            code: adminCode,
+            play: play_id
+        }
+
+        res.send({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}

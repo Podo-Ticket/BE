@@ -1,6 +1,7 @@
 const { Seat, Schedule, Play, User } = require('../models');
 const Op = require('sequelize').Op;
 
+// user
 // 좌석 화면 - 예약된 좌석만 전달
 exports.showSeats = async (req, res) => {
     try {
@@ -165,4 +166,88 @@ exports.cancelTicketing = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-} 
+}
+
+// admin
+// 실시간
+exports.realTimeSeats = async (req, res) => {
+    try {
+        const { play } = req.session.admin;
+        const { scheduleId } = req.query;
+
+        if (!scheduleId) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID"
+            });
+        }
+
+        const schedule = await Schedule.findOne({
+            where: {
+                play_id: play,
+                id: scheduleId,
+            }
+        });
+
+        if (!schedule) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID"
+            });
+        }
+
+        const seats = await Seat.findAll({
+            attributes: ['row', 'number', 'state', 'user_id'],
+            where: { 
+                schedule_id: schedule.id,
+                state: true
+            }
+        })
+
+        // 여석
+        const availableSeats = schedule.available_seats - seats.length;
+
+        res.send({ seats: seats, availableSeats: availableSeats });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 관객 정보
+exports.showAudience = async (req, res) => {
+    try {
+        const { play } = req.session.admin;
+        const { scheduleId, userId } = req.query;
+
+        if (!scheduleId || !userId) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID 또는 사용자 ID"
+            });
+        }
+
+        const schedule = await Schedule.findOne({
+            where: {
+                play_id: play,
+                id: scheduleId
+            }
+        });
+
+        if (!schedule) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID"
+            });
+        }
+
+        const user = await User.findOne({
+            attributes:['name', 'phone_number', 'head_count'],
+            where:{
+                id: userId,
+                schedule_id: scheduleId
+            }
+        })
+
+        res.send({ user: user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
