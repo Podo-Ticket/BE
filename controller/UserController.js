@@ -1,4 +1,5 @@
-const { User } = require('../models');
+const { User, Schedule } = require('../models');
+const { Op } = require('sequelize');
 
 // user
 // 예약 확인
@@ -68,6 +69,47 @@ exports.enterAdmin = async (req, res) => {
         }
 
         res.send({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 명단 관리
+exports.showList = async (req, res) => {
+    try {
+        const { scheduleId, name, phoneNumber } = req.query;
+
+        if (!scheduleId) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID"
+            });
+        }
+
+        const whereClause = {
+            schedule_id: scheduleId
+        }
+
+        if (name) {
+            whereClause.name = {
+                [Op.like]: `%${name}%`
+            };
+        }
+
+        if (phoneNumber) {
+            whereClause.phone_number = {
+                [Op.like]: `%${phoneNumber}%`
+            };
+        }
+
+        const users = await User.findAll({
+            attributes:['id', 'name', 'phone_number', 'head_count', 'state'],
+            where: whereClause
+        });
+
+        const ticketingCnt = users.filter(user => user.state === true).length;
+
+        res.send({ total: users.length, ticketingCnt: ticketingCnt, users: users });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
