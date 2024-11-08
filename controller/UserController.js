@@ -1,4 +1,4 @@
-const { User, Schedule } = require('../models');
+const { User, Schedule, Seat } = require('../models');
 const { Op } = require('sequelize');
 
 // user
@@ -209,6 +209,36 @@ exports.showAudienceInfo = async (req, res) => {
         });
 
         res.send({ user: user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 예매 삭제 확인
+exports.deleteAudience = async (req, res) => {
+    try {
+        const { userId } = req.query;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: "올바르지 않은 사용자 ID"
+            });
+        }
+
+        await Seat.destroy({
+            where: {
+                user_id: userId
+            }
+        });
+
+        await User.destroy({
+            where: {
+                id: userId
+            }
+        });
+
+        res.send({ success: true });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");

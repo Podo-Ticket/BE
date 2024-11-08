@@ -13,5 +13,6 @@ router.get("/schedule", isAdmin, controller.showSchedule);
 router.get("/admin", isAdmin, controller.showScheduleAdmin);
 router.post("/admin", isAdmin, controller.reservationAdmin);
 router.get("/info", isAdmin, controller.showAudienceInfo);
+router.delete("/delete", isAdmin, controller.deleteAudience);
 
 module.exports = router;
