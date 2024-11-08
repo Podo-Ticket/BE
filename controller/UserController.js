@@ -61,7 +61,8 @@ exports.showList = async (req, res) => {
         }
 
         const whereClause = {
-            schedule_id: scheduleId
+            schedule_id: scheduleId,
+            on_site: false
         }
 
         if (name) {

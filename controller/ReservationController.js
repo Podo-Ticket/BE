@@ -77,7 +77,8 @@ exports.reservation = async (req, res) => {
             name: name,
             phone_number: phoneNumber,
             head_count: headCount,
-            schedule_id: scheduleId
+            schedule_id: scheduleId,
+            on_site: true,
         })
 
         res.send({ success: true });
