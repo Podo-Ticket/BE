@@ -211,3 +211,43 @@ exports.realTimeSeats = async (req, res) => {
         res.status(500).send("Internal server error");
     }
 }
+
+// 관객 정보
+exports.showAudience = async (req, res) => {
+    try {
+        const { play } = req.session.admin;
+        const { scheduleId, userId } = req.query;
+
+        if (!scheduleId || !userId) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID 또는 사용자 ID"
+            });
+        }
+
+        const schedule = await Schedule.findOne({
+            where: {
+                play_id: play,
+                id: scheduleId
+            }
+        });
+
+        if (!schedule) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID"
+            });
+        }
+
+        const user = await User.findOne({
+            attributes:['name', 'phone_number', 'head_count'],
+            where:{
+                id: userId,
+                schedule_id: scheduleId
+            }
+        })
+
+        res.send({ user: user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
