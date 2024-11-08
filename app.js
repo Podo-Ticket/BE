@@ -54,6 +54,10 @@ app.use("/user", userRouter);
 const seatRouter = require('./routes/seat');
 app.use("/seat", seatRouter);
 
+// 티켓 정보
+const ticketRouter= require('./routes/ticket');
+app.use("/ticket", ticketRouter);
+
 app.get('*', (req, res) => {
   res.send('404');
 });

@@ -1,4 +1,3 @@
-const { where } = require('sequelize');
 const { Seat, Schedule, Play, User } = require('../models');
 const Op = require('sequelize').Op;
 
@@ -158,4 +157,4 @@ exports.cancelTicketing = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+} 
