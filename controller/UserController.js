@@ -17,9 +17,14 @@ exports.checkReservation = async (req, res) => {
             }
         });
 
-        // 이미 예약을 했을 경우 추가 필요
-
         if (user) {
+            if (user.state === true) {
+                return res.send({
+                    success: false,
+                    data: "이미 발권한 사용자"
+                });
+            }
+
             req.session.userInfo={
                 id: user.id,
                 phoneNumber: user.phone_number,
@@ -27,10 +32,14 @@ exports.checkReservation = async (req, res) => {
                 headCount: user.head_count
             }
 
-            return res.send( { success: true });
+            return res.send({ success: true });
         }
-        else
-            return res.send({ success : false});
+        else {
+            return res.send({
+                success: false,
+                data: "예매 내역 확인 불가" 
+            });
+        }
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
