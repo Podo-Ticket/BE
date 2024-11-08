@@ -58,6 +58,10 @@ app.use("/seat", seatRouter);
 const ticketRouter= require('./routes/ticket');
 app.use("/ticket", ticketRouter);
 
+// 서비스 평가
+const surveyRouter = require('./routes/survey');
+app.use("/survey", surveyRouter);
+
 app.get('*', (req, res) => {
   res.send('404');
 });
