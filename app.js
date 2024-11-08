@@ -62,9 +62,13 @@ app.use("/ticket", ticketRouter);
 const surveyRouter = require('./routes/survey');
 app.use("/survey", surveyRouter);
 
-// 현장 예매
+// 예매
 const reservationRouter = require('./routes/reservation');
 app.use("/reservation", reservationRouter);
+
+// 관리자
+const adminRouter = require('./routes/admin');
+app.use("/admin", adminRouter);
 
 app.get('*', (req, res) => {
   res.send('404');

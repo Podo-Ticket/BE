@@ -1,4 +1,5 @@
-const { User } = require('../models');
+const { User, Schedule } = require('../models');
+const { Op } = require('sequelize');
 
 // user
 // 예약 확인
@@ -48,26 +49,60 @@ exports.checkReservation = async (req, res) => {
 };
 
 // admin
-// 접속
-exports.enterAdmin = async (req, res) => {
+// 명단 관리
+exports.showList = async (req, res) => {
     try {
-        const { code }  = req.query;
+        const { scheduleId, name, phoneNumber } = req.query;
 
-        let adminCode = "JAKGONG"; // 작은 공간 관리자 코드
-        let play_id = 1; // 작은 공간 공연 id
-
-        if (code !== adminCode) {
+        if (!scheduleId) {
             return res.status(400).send({
-                error: "잘못된 인증코드"
+                error: "올바르지 않은 공연 일시 ID"
             });
         }
 
-        req.session.admin = {
-            code: adminCode,
-            play: play_id
+        const whereClause = {
+            schedule_id: scheduleId
         }
 
-        res.send({ success: true });
+        if (name) {
+            whereClause.name = {
+                [Op.like]: `%${name}%`
+            };
+        }
+
+        if (phoneNumber) {
+            whereClause.phone_number = {
+                [Op.like]: `%${phoneNumber}%`
+            };
+        }
+
+        const users = await User.findAll({
+            attributes:['id', 'name', 'phone_number', 'head_count', 'state'],
+            where: whereClause
+        });
+
+        const ticketingCnt = users.filter(user => user.state === true).length;
+
+        res.send({ total: users.length, ticketingCnt: ticketingCnt, users: users });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 공연 회차 선택
+exports.showSchedule = async (req, res) => {
+    try {
+        const { play } = req.session.admin;
+
+        const schedules = await Schedule.findAll({
+            attributes:['id', 'date_time'],
+            where: {
+                play_id: play
+            }
+        });
+
+        res.send({ schedules: schedules });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
