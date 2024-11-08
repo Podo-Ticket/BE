@@ -289,31 +289,52 @@ exports.showUpdateAudienceInfo = async (req, res) => {
 }
 
 // 수정 중 - 회원 정보 수정
-// exports.updateAudience = async (req, res) => {
-//     try {
-//         const { userId, name, phoneNumber, headCount } = req.body;
+exports.updateAudience = async (req, res) => {
+    try {
+        const { userId, name, phoneNumber, headCount, scheduleId } = req.body;
 
-//         let phoneRegx = /^(01[016789]{1})-?[0-9]{4}-?[0-9]{4}$/;
+        let phoneRegx = /^(01[016789]{1})-?[0-9]{4}-?[0-9]{4}$/;
 
-//         if (!userId || !name || !phoneNumber || !headCount || !phoneRegx.test(phoneNumber) || isNaN(headCount) || headCount > 16) {
-//             return res.status(400).send({
-//                 error: "올바르지 않은 사용자 정보"
-//             });
-//         }
+        if (!userId || !name || !phoneNumber || !headCount || !phoneRegx.test(phoneNumber) || isNaN(headCount) || headCount > 16 || !scheduleId) {
+            return res.status(400).send({
+                error: "올바르지 않은 변경 정보"
+            });
+        }
 
-//         await User.update({
-//             name: name,
-//             phone_number: phoneNumber,
-//             head_count: headCount
-//         }, {
-//             where: {
-//                 id: userId
-//             }
-//         });
+        // 예약 가능 인원 확인
+        const reservedSeats = await Seat.count({
+            where: {
+                schedule_id: scheduleId,
+            }
+        });
 
-//         res.send({ success: true });
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).send("Internal server error");
-//     }
-// }
+        const seats = await Schedule.findOne({
+            where: {
+                id: scheduleId
+            }
+        });
+        
+        if (seats.available_seats < reservedSeats + headCount) {
+            return res.send({
+                success: false,
+                error: "예약 가능 인원을 초과하였습니다."
+            });
+        }
+
+        await User.update({
+            name: name,
+            phone_number: phoneNumber,
+            head_count: headCount,
+            schedule_id: scheduleId
+        }, {
+            where: {
+                id: userId
+            }
+        });
+
+        res.send({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
