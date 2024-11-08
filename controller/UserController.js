@@ -52,7 +52,7 @@ exports.checkReservation = async (req, res) => {
 // 명단 관리
 exports.showList = async (req, res) => {
     try {
-        const { scheduleId, name, phoneNumber } = req.query;
+        const { scheduleId, name, phoneNumber, state } = req.query;
 
         if (!scheduleId) {
             return res.status(400).send({
@@ -77,9 +77,17 @@ exports.showList = async (req, res) => {
             };
         }
 
+        if (state) {
+            whereClause.state = state;
+        }
+
         const users = await User.findAll({
             attributes:['id', 'name', 'phone_number', 'head_count', 'state'],
-            where: whereClause
+            where: whereClause,
+            order: [
+                ['name', 'ASC'],
+                ['phone_number', 'ASC']
+            ]
         });
 
         const ticketingCnt = users.filter(user => user.state === true).length;
@@ -89,7 +97,7 @@ exports.showList = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 공연 회차 선택
 exports.showSchedule = async (req, res) => {
@@ -108,7 +116,7 @@ exports.showSchedule = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 명단 추가 - 공연 회차 보여주기
 exports.showScheduleAdmin = async (req, res) => {
@@ -188,7 +196,7 @@ exports.reservationAdmin = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 명단 확인 - 사용자 정보 보여주기
 exports.showAudienceInfo = async (req, res) => {
@@ -220,7 +228,7 @@ exports.showAudienceInfo = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 예매 삭제 확인
 exports.deleteAudience = async (req, res) => {
@@ -250,7 +258,7 @@ exports.deleteAudience = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 수정 중 - 회원 정보 보여주기
 exports.showUpdateAudienceInfo = async (req, res) => {
@@ -286,7 +294,7 @@ exports.showUpdateAudienceInfo = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
 
 // 수정 중 - 회원 정보 수정
 exports.updateAudience = async (req, res) => {
@@ -337,4 +345,4 @@ exports.updateAudience = async (req, res) => {
         console.error(err);
         res.status(500).send("Internal server error");
     }
-}
+};
