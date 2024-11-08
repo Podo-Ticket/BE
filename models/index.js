@@ -12,7 +12,12 @@ const sequelize = new Sequelize(
     {
         host: process.env.DB_HOST,
         dialect: process.env.DB_DIALECT,
-        timezone: '+09:00'
+        timezone: '+09:00',
+        dialectOptions: {
+            charset: "utf8mb4",
+            dateStrings: true,
+            typeCast: true,
+          },
     }
 );
 

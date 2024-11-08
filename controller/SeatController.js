@@ -1,4 +1,4 @@
-const { Seat } = require('../models');
+const { Seat, Schedule, Play } = require('../models');
 const Op = require('sequelize').Op;
 
 // 좌석 화면 - 예약된 좌석만 전달
@@ -78,6 +78,33 @@ exports.checkReserved = async (req, res) => {
             success: true,
             seats: parsedSeats
         });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 발권 신청 화면
+exports.showTicketing = async (req,res) => {
+    try {
+        const { id } = req.session.userInfo;
+
+        const seats = await Seat.findAll({
+            attributes: [ 'row', 'number', 'schedule_id' ],
+            where: { user_id: id },
+        });
+
+        const play = await Schedule.findAll({
+            attributes: ['date_time'],
+            where: { id: seats[0].schedule_id },
+            include: {
+                model: Play,
+                attributes: ['title', 'poster'],
+
+            }
+        });
+
+        res.send({ play: play, seats: seats });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
