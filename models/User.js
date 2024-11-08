@@ -31,6 +31,12 @@ const User = (sequelize) => {
                 allowNull: false,
                 defaultValue: false,
                 comment: '발권 상태',
+            },
+            on_site: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+                comment: '현장 예매 여부',
             }
         },
         {
