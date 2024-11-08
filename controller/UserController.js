@@ -190,4 +190,27 @@ exports.reservationAdmin = async (req, res) => {
     }
 }
 
-// 명단 확인
+// 명단 확인 - 사용자 정보 보여주기
+exports.showAudienceInfo = async (req, res) => {
+    try {
+        const { scheduleId, userId } = req.query;
+
+        if (!scheduleId || !userId) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID 또는 사용자 ID"
+            });
+        }
+
+        const user = await User.findOne({
+            attributes: ['name', 'phone_number', 'head_count', 'schedule_id'],
+            where: {
+                schedule_id: scheduleId
+            }
+        });
+
+        res.send({ user: user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
