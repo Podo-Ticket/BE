@@ -1,4 +1,5 @@
-const { Seat } = require('../models');
+const { where } = require('sequelize');
+const { Seat, Schedule, Play, User } = require('../models');
 const Op = require('sequelize').Op;
 
 // 좌석 화면 - 예약된 좌석만 전달
@@ -78,6 +79,81 @@ exports.checkReserved = async (req, res) => {
             success: true,
             seats: parsedSeats
         });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 발권 신청 화면
+exports.showTicketing = async (req,res) => {
+    try {
+        const { id } = req.session.userInfo;
+
+        const seats = await Seat.findAll({
+            attributes: [ 'row', 'number', 'schedule_id' ],
+            where: { user_id: id },
+        });
+
+        const play = await Schedule.findAll({
+            attributes: ['date_time'],
+            where: { id: seats[0].schedule_id },
+            include: {
+                model: Play,
+                attributes: ['title', 'poster'],
+
+            }
+        });
+
+        res.send({ play: play, seats: seats });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 발권 신청
+exports.requestTicketing = async (req, res) => {
+    try {
+        const { id } = req.session.userInfo;
+        
+        await Seat.update(
+            { state: true },
+            { where: { user_id: id } }
+        );
+
+        await User.update(
+            { state: true},
+            { where: { id: id } }
+        )
+
+        res.send({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 발권 신청에서 뒤로가기
+exports.cancelTicketing = async (req, res) => {
+    try {
+        const { id } = req.session.userInfo;
+
+        const user = await User.findOne({
+            where: { id: id }
+        })
+
+        if (user.state) {
+            return res.status(400).send({
+                error: "이미 발권 신청이 완료됨."
+            });
+        }
+
+        await Seat.destroy({
+            where: { user_id: id }
+        });
+
+        res.send({ success: true });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
