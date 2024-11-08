@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const isAuthenticated = require('../middleware/auth');
+const isAdmin = require('../middleware/admin');
 const controller = require('../controller/SeatController');
 
 router.get("/", isAuthenticated ,controller.showSeats);

@@ -38,7 +38,7 @@ app.use(
 
 app.use('/uploads', express.static(__dirname + '/uploads'));
 
-// 메인 - 수정 예정
+// 메인
 const indexRouter = require('./routes/index');
 app.use('/', indexRouter);
 
