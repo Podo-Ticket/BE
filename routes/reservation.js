@@ -9,5 +9,7 @@ router.post("/",controller.reservation);
 
 // admin
 router.get("/admin", isAdmin, controller.showOnSite);
+router.patch("/approve", isAdmin, controller.approveOnSite);
+router.delete("/delete", isAdmin, controller.deleteOnSite);
 
 module.exports = router;

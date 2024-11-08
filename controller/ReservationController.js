@@ -138,3 +138,79 @@ exports.showOnSite = async (req, res) => {
         res.status(500).send("Internal server error");
     }
 };
+
+// 수락
+exports.approveOnSite = async (req, res) => {
+    try {
+        const { userId, scheduleId } = req.body;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: "올바르지 않은 사용자 ID"
+            });
+        }
+
+        const user = await User.findOne({
+            where: {
+                id: userId
+            }
+        });
+
+        // 예약 가능 인원 확인
+        const reservedSeats = await Seat.count({
+            where: {
+                schedule_id: scheduleId,
+            }
+        });
+
+        const seats = await Schedule.findOne({
+            where: {
+                id: scheduleId
+            }
+        });
+        
+        if (seats.available_seats < reservedSeats + user.headCount) {
+            return res.send({
+                success: false,
+                error: "예약 가능 인원을 초과하였습니다."
+            });
+        }
+
+        await User.update({
+            approve: true
+        }, {
+            where: {
+                id: userId
+            }
+        });
+
+        res.send({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }   
+};
+
+// 삭제
+exports.deleteOnSite = async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: "올바르지 않은 사용자 ID"
+            });
+        }
+
+        await User.destroy({
+            where: {
+                id: userId
+            }
+        });
+
+        res.send({ success: true });
+    } catch {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+};
