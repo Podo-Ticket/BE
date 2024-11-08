@@ -205,6 +205,13 @@ exports.showAudienceInfo = async (req, res) => {
             attributes: ['name', 'phone_number', 'head_count', 'schedule_id'],
             where: {
                 schedule_id: scheduleId
+            },
+            include: {
+                model: Schedule,
+                attributes: ['date_time'],
+                where: {
+                    id: scheduleId
+                }
             }
         });
 
@@ -244,3 +251,69 @@ exports.deleteAudience = async (req, res) => {
         res.status(500).send("Internal server error");
     }
 }
+
+// 수정 중 - 회원 정보 보여주기
+exports.showUpdateAudienceInfo = async (req, res) => {
+    try {
+        const { userId } = req.query;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: "올바르지 않은 관객 ID"
+            });
+        }
+
+        const user = await User.findOne({
+            attributes: ['name', 'phone_number', 'head_count', 'schedule_id'],
+            where: {
+                id: userId
+            }
+        });
+
+        const schedule = await Schedule.findOne({
+            attributes: ['id', 'date_time'],
+            where: {
+                id: user.schedule_id,
+                date_time: {
+                    [Op.gte]: new Date()
+                }
+            },
+            order: [['date_time', 'ASC']]
+        });
+
+        res.send({ user: user, schedule: schedule });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 수정 중 - 회원 정보 수정
+// exports.updateAudience = async (req, res) => {
+//     try {
+//         const { userId, name, phoneNumber, headCount } = req.body;
+
+//         let phoneRegx = /^(01[016789]{1})-?[0-9]{4}-?[0-9]{4}$/;
+
+//         if (!userId || !name || !phoneNumber || !headCount || !phoneRegx.test(phoneNumber) || isNaN(headCount) || headCount > 16) {
+//             return res.status(400).send({
+//                 error: "올바르지 않은 사용자 정보"
+//             });
+//         }
+
+//         await User.update({
+//             name: name,
+//             phone_number: phoneNumber,
+//             head_count: headCount
+//         }, {
+//             where: {
+//                 id: userId
+//             }
+//         });
+
+//         res.send({ success: true });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).send("Internal server error");
+//     }
+// }
