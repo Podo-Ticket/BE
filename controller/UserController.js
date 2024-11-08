@@ -27,8 +27,6 @@ exports.checkReservation = async (req, res) => {
                 headCount: user.head_count
             }
 
-            console.log(req.session.userInfo);
-
             return res.send(true);
         }
         else

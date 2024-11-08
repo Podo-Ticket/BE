@@ -16,6 +16,11 @@ const Schedule = (sequelize) => {
                 allowNull: false,
                 comment: '일시',
             },
+            available_seats: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                comment: '예약 가능 좌석 수',
+            }
         },
         {
             tableName: 'schedule',

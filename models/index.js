@@ -41,6 +41,10 @@ Seat.belongsTo(Schedule, { foreignKey: 'schedule_id', targetKey: 'id' });
 User.hasMany(Seat, { foreignKey: 'user_id', sourceKey: 'id' });
 Seat.belongsTo(User, { foreignKey: 'user_id', targetKey: 'id' });
 
+// Schedule : User = 1 : N
+Schedule.hasMany(User, { foreignKey: 'schedule_id', sourceKey: 'id' });
+User.belongsTo(Schedule, { foreignKey: 'schedule_id', targetKey: 'id' });
+
 // User : Survey = 1 : 1
 User.hasOne(Survey, { foreignKey: 'user_id', sourceKey: 'id' });
 Survey.belongsTo(User, { foreignKey: 'user_id', targetKey: 'id' });

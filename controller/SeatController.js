@@ -53,9 +53,6 @@ exports.checkReserved = async (req, res) => {
         }
 
         // 선택한 좌석 수와 예매 인원 대조
-        console.log(headCount);
-        console.log(parsedSeats.length);
-
         if(parsedSeats.length !== headCount) {
             return res.status(400).send({
                 error: "예매 인원과 선택한 좌석 수가 일치하지 않습니다"
