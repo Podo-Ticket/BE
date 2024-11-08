@@ -20,7 +20,7 @@ exports.postPlay = async (req, res) => {
             poster: filePath
         });
 
-        res.send(true);
+        res.send({ success: true});
     }catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
@@ -44,7 +44,7 @@ exports.postSchedule = async (req, res) => {
             available_seats: availableSeats
         });
 
-        res.send(true);
+        res.send({suceess: true});
     }catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");

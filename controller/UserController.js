@@ -27,10 +27,10 @@ exports.checkReservation = async (req, res) => {
                 headCount: user.head_count
             }
 
-            return res.send(true);
+            return res.send( { success: true });
         }
         else
-            return res.send(false);
+            return res.send({ success : false});
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
