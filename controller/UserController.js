@@ -91,3 +91,20 @@ exports.showList = async (req, res) => {
 }
 
 // 공연 회차 선택
+exports.showSchedule = async (req, res) => {
+    try {
+        const { play } = req.session.admin;
+
+        const schedules = await Schedule.findAll({
+            attributes:['id', 'date_time'],
+            where: {
+                play_id: play
+            }
+        });
+
+        res.send({ schedules: schedules });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}

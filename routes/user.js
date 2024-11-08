@@ -8,7 +8,7 @@ const controller = require('../controller/UserController');
 router.get("/check", controller.checkReservation);
 
 // admin
-router.get("/admin", controller.enterAdmin);
 router.get("/list", isAdmin, controller.showList);
+router.get("/schedule", isAdmin, controller.showSchedule);
 
 module.exports = router;
