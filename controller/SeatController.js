@@ -1,3 +1,4 @@
+const { where } = require('sequelize');
 const { Seat, Schedule, Play, User } = require('../models');
 const Op = require('sequelize').Op;
 
@@ -125,6 +126,32 @@ exports.requestTicketing = async (req, res) => {
             { state: true},
             { where: { id: id } }
         )
+
+        res.send({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 발권 신청에서 뒤로가기
+exports.cancelTicketing = async (req, res) => {
+    try {
+        const { id } = req.session.userInfo;
+
+        const user = await User.findOne({
+            where: { id: id }
+        })
+
+        if (user.state) {
+            return res.status(400).send({
+                error: "이미 발권 신청이 완료됨."
+            });
+        }
+
+        await Seat.destroy({
+            where: { user_id: id }
+        });
 
         res.send({ success: true });
     } catch (err) {

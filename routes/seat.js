@@ -7,5 +7,6 @@ router.get("/", isAuthenticated ,controller.showSeats);
 router.get("/check", isAuthenticated, controller.checkReserved);
 router.get("/ticketing", isAuthenticated, controller.showTicketing);
 router.patch("/ticketing", isAuthenticated, controller.requestTicketing);
+router.delete("/back", isAuthenticated, controller.cancelTicketing);
 
 module.exports = router;
