@@ -245,6 +245,12 @@ exports.showAudience = async (req, res) => {
             }
         })
 
+        if(!user) {
+            return res.status(400).send({
+                error: "존재하지 않는 관객"
+            });
+        }
+
         res.send({ user: user });
     } catch (err) {
         console.error(err);
