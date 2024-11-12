@@ -11,12 +11,6 @@ const OnSite = (sequelize) => {
                 autoIncrement: true,
                 comment: '현장 예매 pri 키',
             },
-            on_site: {
-                type: DataTypes.BOOLEAN,
-                allowNull: false,
-                defaultValue: false,
-                comment: '현장 예매 여부',
-            },
             approve: {
                 type: DataTypes.BOOLEAN,
                 allowNull: false,
