@@ -67,7 +67,7 @@ exports.reservation = async (req, res) => {
         if (isExists) {
             return res.send({
                 success: false,
-                error: "이미 예약되어있습니다."
+                error: "이미 예약되었습니다."
             });
         }
 
