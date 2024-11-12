@@ -27,6 +27,7 @@ const Seat = require('./Seat')(sequelize);
 const Survey = require('./Survey')(sequelize);
 const Play = require('./Play')(sequelize);
 const Schedule = require('./Schedule')(sequelize);
+const OnSite = require('./OnSite')(sequelize);
 
 // 모델간의 관계 설정
 // Play : Schedule = 1 : N
@@ -49,12 +50,17 @@ User.belongsTo(Schedule, { foreignKey: 'schedule_id', targetKey: 'id' });
 User.hasOne(Survey, { foreignKey: 'user_id', sourceKey: 'id' });
 Survey.belongsTo(User, { foreignKey: 'user_id', targetKey: 'id' });
 
+// User : OnSite = 1 : 1
+User.hasOne(OnSite, { foreignKey: 'user_id', sourceKey: 'id' });
+OnSite.belongsTo(User, { foreignKey: 'user_id', targetKey: 'id' });
+
 // 모델 DB 객체에 저장
 db.User = User;
 db.Seat = Seat;
 db.Survey = Survey;
 db.Play = Play;
 db.Schedule = Schedule;
+db.OnSite = OnSite;
 
 db.sequelize = sequelize;
 

@@ -80,8 +80,19 @@ exports.checkReserved = async (req, res) => {
         await Seat.bulkCreate(seatConditions.map(seat => ({
             ...seat,
             user_id: req.session.userInfo.id,
-        }))
-    );
+        })));
+
+        // 3분 타이머
+        const timerId = setTimeout(async () => {
+            // 3분 후에 예약 확정이 아니라면, 좌석 취소
+            const user = await User.findOne({ where: { id: req.session.userInfo.id } });
+
+            if (!user.state) {
+                await Seat.destroy({ where: { user_id: req.session.userInfo.id } });
+            }
+        }, 3 * 60 * 1000);
+
+        req.session.userInfo.timerId = timerId.toString();
 
         return res.send({
             success: true,
@@ -123,7 +134,13 @@ exports.showTicketing = async (req,res) => {
 // 발권 신청
 exports.requestTicketing = async (req, res) => {
     try {
-        const { id } = req.session.userInfo;
+        const { id, timerId } = req.session.userInfo;
+
+        // 타이머가 설정되어 있으면 취소
+        if(timerId) {
+            clearTimeout(parseInt(timerId, 10));
+            delete req.session.userInfo.timerId;
+        }
         
         await Seat.update(
             { state: true },

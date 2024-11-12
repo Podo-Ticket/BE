@@ -1,4 +1,4 @@
-const { Survey, User } = require('../models');
+const { Survey } = require('../models');
 
 // 서비스 평가
 exports.evaluateService = async (req, res) => {
@@ -6,7 +6,7 @@ exports.evaluateService = async (req, res) => {
         const { answer } = req.body;
         const { id } = req.session.userInfo;
 
-        const user = await User.findOne({
+        const user = await Survey.findOne({
             where: { id: id }
         });
 

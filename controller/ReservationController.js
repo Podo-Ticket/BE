@@ -1,4 +1,4 @@
-const { Seat, Schedule, User } = require("../models");
+const { Seat, Schedule, User, OnSite } = require("../models");
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -18,6 +18,24 @@ exports.showSchedule = async (req, res) => {
                 play_id: playId
           }
         });
+
+        const schedulePromiese = schedules.map(async (schedule) => {
+            const reservedSeats = await Seat.count({
+                where: {
+                    schedule_id: schedule.id,
+                }
+            });
+
+            const seats = await Schedule.findOne({
+                where: {
+                    id: schedule.id
+                }
+            });
+
+            schedule.dataValues.available_seats = seats.available_seats - reservedSeats;
+        });
+
+        await Promise.all(schedulePromiese);
 
         res.send({ schedules: schedules });
     } catch (err) {
@@ -49,7 +67,7 @@ exports.reservation = async (req, res) => {
         if (isExists) {
             return res.send({
                 success: false,
-                error: "이미 예약되어있습니다."
+                error: "이미 예약되었습니다."
             });
         }
 
@@ -73,13 +91,17 @@ exports.reservation = async (req, res) => {
             });
         }
 
-        await User.create({
+        const user = await User.create({
             name: name,
             phone_number: phoneNumber,
             head_count: headCount,
             schedule_id: scheduleId,
-            on_site: true,
         })
+
+        await OnSite.create({
+            user_id: user.id,
+            approve: false,
+        });
 
         res.send({ success: true });
     } catch (err) {
