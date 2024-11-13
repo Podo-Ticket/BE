@@ -214,9 +214,9 @@ exports.showAudienceInfo = async (req, res) => {
         }
 
         const user = await User.findOne({
-            attributes: ['name', 'phone_number', 'head_count', 'schedule_id'],
+            attributes: ['name', 'phone_number', 'head_count', 'schedule_id', 'state'],
             where: {
-                schedule_id: scheduleId
+                id: userId
             },
             include: {
                 model: Schedule,
