@@ -1,5 +1,5 @@
 const { User, Schedule, Seat } = require('../models');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require('sequelize');
 
 // user
 // 예약 확인
@@ -62,7 +62,6 @@ exports.showList = async (req, res) => {
 
         const whereClause = {
             schedule_id: scheduleId,
-            on_site: false
         }
 
         if (name) {
@@ -79,6 +78,12 @@ exports.showList = async (req, res) => {
 
         if (state) {
             whereClause.state = state;
+        }
+
+        whereClause.id = {
+            [Op.notIn]: Sequelize.literal(
+                '(SELECT user_id FROM on_site WHERE user_id IS NOT NULL)'
+            )
         }
 
         const users = await User.findAll({
@@ -99,7 +104,7 @@ exports.showList = async (req, res) => {
     }
 };
 
-// 공연 회차 선택
+// 공연 회차 선택 / 명단 추가 - 공연 회차 보여주기
 exports.showSchedule = async (req, res) => {
     try {
         const { play } = req.session.admin;
@@ -111,24 +116,23 @@ exports.showSchedule = async (req, res) => {
             }
         });
 
-        res.send({ schedules: schedules });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Internal server error");
-    }
-};
+        const schedulePromiese = schedules.map(async (schedule) => {
+            const reservedSeats = await Seat.count({
+                where: {
+                    schedule_id: schedule.id,
+                }
+            });
 
-// 명단 추가 - 공연 회차 보여주기
-exports.showScheduleAdmin = async (req, res) => {
-    try {
-        const { play } = req.session.admin;
+            const seats = await Schedule.findOne({
+                where: {
+                    id: schedule.id
+                }
+            });
 
-        const schedules = await Schedule.findAll({
-            attributes: ['id', 'date_time'],
-            where: {
-                play_id: play
-          }
+            schedule.dataValues.available_seats = seats.available_seats - reservedSeats;
         });
+
+        await Promise.all(schedulePromiese);
 
         res.send({ schedules: schedules });
     } catch (err) {
