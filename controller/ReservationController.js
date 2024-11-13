@@ -1,4 +1,5 @@
 const { Seat, Schedule, User, OnSite } = require("../models");
+const Op = require('sequelize').Op;
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -51,7 +52,7 @@ exports.reservation = async (req, res) => {
 
         let phoneRegx = /^(01[016789]{1})-?[0-9]{4}-?[0-9]{4}$/;
 
-        if (!name || !phoneNumber || !headCount || !scheduleId || !phoneRegx.test(phoneNumber) || isNaN(headCount)) {
+        if (!name || !phoneNumber || !headCount || !scheduleId || !phoneRegx.test(phoneNumber) || isNaN(headCount) || headCount > 16) {
             return res.status(400).send({
                 error: "올바르지 않은 예약 정보"
             });
@@ -123,8 +124,7 @@ exports.showOnSite = async (req, res) => {
         }
 
         const whereClause = {
-            schedule_id: scheduleId,
-            on_site: true
+            schedule_id: scheduleId
         }
 
         if (name) {
@@ -143,13 +143,17 @@ exports.showOnSite = async (req, res) => {
             whereClause.approve = approve;
         }
 
-        const users = await User.findAll({
-            attributes: ['id', 'name', 'phone_number', 'head_count', 'state', 'approve'],
-            where: whereClause,
-            order: [
-                ['name', 'ASC'],
-                ['phone_number', 'ASC']
-            ]
+        const users = await OnSite.findAll({
+            attributes: [ 'approve' ],
+            include: {
+                model: User,
+                attributes: ['name', 'phone_number', 'head_count'],
+                where: whereClause,
+                order: [
+                    ['name', 'ASC'],
+                    ['phone_number', 'ASC']
+                ]
+            },
         });
 
         const approvalCnt = users.filter(user => user.approve === true).length;
@@ -164,19 +168,25 @@ exports.showOnSite = async (req, res) => {
 // 수락
 exports.approveOnSite = async (req, res) => {
     try {
-        const { userId, scheduleId } = req.body;
+        const { userIds, scheduleId } = req.body;
 
-        if (!userId) {
+        if (!userIds || !Array.isArray(userIds) || !scheduleId) {
             return res.status(400).send({
-                error: "올바르지 않은 사용자 ID"
+                error: "올바르지 않은 사용자 ID 또는 공연 일시 ID"
             });
         }
 
-        const user = await User.findOne({
-            where: {
-                id: userId
-            }
-        });
+        let totalHeadCount = 0;
+
+        for (const userId of userIds) {
+            const user = await User.findOne({
+                where: {
+                    id: userId
+                }
+            });
+
+            totalHeadCount += user.head_count;
+        }
 
         // 예약 가능 인원 확인
         const reservedSeats = await Seat.count({
@@ -191,18 +201,18 @@ exports.approveOnSite = async (req, res) => {
             }
         });
         
-        if (seats.available_seats < reservedSeats + user.headCount) {
+        if (seats.available_seats < reservedSeats + totalHeadCount) {
             return res.send({
                 success: false,
                 error: "예약 가능 인원을 초과하였습니다."
             });
         }
 
-        await User.update({
+        await OnSite.update({
             approve: true
         }, {
             where: {
-                id: userId
+                user_id: userIds // 일괄 업데이트
             }
         });
 
@@ -216,17 +226,23 @@ exports.approveOnSite = async (req, res) => {
 // 삭제
 exports.deleteOnSite = async (req, res) => {
     try {
-        const { userId } = req.body;
+        const { userIds } = req.body;
 
-        if (!userId) {
+        if (!userIds || !Array.isArray(userIds)) {
             return res.status(400).send({
                 error: "올바르지 않은 사용자 ID"
             });
         }
 
+        await OnSite.destroy({
+            where: {
+                user_id: userIds
+            }
+        });
+
         await User.destroy({
             where: {
-                id: userId
+                id: userIds
             }
         });
 

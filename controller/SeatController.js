@@ -1,3 +1,4 @@
+const { where } = require('sequelize');
 const { Seat, Schedule, Play, User } = require('../models');
 const Op = require('sequelize').Op;
 
@@ -233,11 +234,11 @@ exports.realTimeSeats = async (req, res) => {
 exports.showAudience = async (req, res) => {
     try {
         const { play } = req.session.admin;
-        const { scheduleId, userId } = req.query;
+        const { scheduleId, seatId } = req.query;
 
-        if (!scheduleId || !userId) {
+        if (!scheduleId || !seatId) {
             return res.status(400).send({
-                error: "올바르지 않은 공연 일시 ID 또는 사용자 ID"
+                error: "올바르지 않은 공연 일시 ID 또는 좌석 ID"
             });
         }
 
@@ -254,21 +255,18 @@ exports.showAudience = async (req, res) => {
             });
         }
 
-        const user = await User.findOne({
-            attributes:['name', 'phone_number', 'head_count'],
-            where:{
-                id: userId,
-                schedule_id: scheduleId
+        const seat = await Seat.findOne({
+            attributes: ['row', 'number'],
+            where: {
+                id: seatId
+            },
+            include: {
+                model: User,
+                attributes: ['name', 'phone_number', 'head_count']
             }
-        })
+        });
 
-        if(!user) {
-            return res.status(400).send({
-                error: "존재하지 않는 관객"
-            });
-        }
-
-        res.send({ user: user });
+        res.send({ userInfo: seat });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
