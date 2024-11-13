@@ -1,4 +1,5 @@
 const { Seat, Schedule, User, OnSite } = require("../models");
+const Op = require('sequelize').Op;
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -123,8 +124,7 @@ exports.showOnSite = async (req, res) => {
         }
 
         const whereClause = {
-            schedule_id: scheduleId,
-            on_site: true
+            schedule_id: scheduleId
         }
 
         if (name) {
@@ -143,13 +143,17 @@ exports.showOnSite = async (req, res) => {
             whereClause.approve = approve;
         }
 
-        const users = await User.findAll({
-            attributes: ['id', 'name', 'phone_number', 'head_count', 'state', 'approve'],
-            where: whereClause,
-            order: [
-                ['name', 'ASC'],
-                ['phone_number', 'ASC']
-            ]
+        const users = await OnSite.findAll({
+            attributes: [ 'approve' ],
+            include: {
+                model: User,
+                attributes: ['name', 'phone_number', 'head_count'],
+                where: whereClause,
+                order: [
+                    ['name', 'ASC'],
+                    ['phone_number', 'ASC']
+                ]
+            },
         });
 
         const approvalCnt = users.filter(user => user.approve === true).length;
