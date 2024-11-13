@@ -226,9 +226,9 @@ exports.approveOnSite = async (req, res) => {
 // 삭제
 exports.deleteOnSite = async (req, res) => {
     try {
-        const { userId } = req.body;
+        const { userIds } = req.body;
 
-        if (!userId) {
+        if (!userIds || !Array.isArray(userIds)) {
             return res.status(400).send({
                 error: "올바르지 않은 사용자 ID"
             });
@@ -236,13 +236,13 @@ exports.deleteOnSite = async (req, res) => {
 
         await OnSite.destroy({
             where: {
-                user_id: userId
+                user_id: userIds
             }
         });
 
         await User.destroy({
             where: {
-                id: userId
+                id: userIds
             }
         });
 
