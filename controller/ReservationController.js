@@ -168,19 +168,25 @@ exports.showOnSite = async (req, res) => {
 // 수락
 exports.approveOnSite = async (req, res) => {
     try {
-        const { userId, scheduleId } = req.body;
+        const { userIds, scheduleId } = req.body;
 
-        if (!userId) {
+        if (!userIds || !Array.isArray(userIds) || !scheduleId) {
             return res.status(400).send({
-                error: "올바르지 않은 사용자 ID"
+                error: "올바르지 않은 사용자 ID 또는 공연 일시 ID"
             });
         }
 
-        const user = await User.findOne({
-            where: {
-                id: userId
-            }
-        });
+        let totalHeadCount = 0;
+
+        for (const userId of userIds) {
+            const user = await User.findOne({
+                where: {
+                    id: userId
+                }
+            });
+
+            totalHeadCount += user.head_count;
+        }
 
         // 예약 가능 인원 확인
         const reservedSeats = await Seat.count({
@@ -195,18 +201,18 @@ exports.approveOnSite = async (req, res) => {
             }
         });
         
-        if (seats.available_seats < reservedSeats + user.headCount) {
+        if (seats.available_seats < reservedSeats + totalHeadCount) {
             return res.send({
                 success: false,
                 error: "예약 가능 인원을 초과하였습니다."
             });
         }
 
-        await User.update({
+        await OnSite.update({
             approve: true
         }, {
             where: {
-                id: userId
+                user_id: userIds // 일괄 업데이트
             }
         });
 
@@ -227,6 +233,12 @@ exports.deleteOnSite = async (req, res) => {
                 error: "올바르지 않은 사용자 ID"
             });
         }
+
+        await OnSite.destroy({
+            where: {
+                user_id: userId
+            }
+        });
 
         await User.destroy({
             where: {
