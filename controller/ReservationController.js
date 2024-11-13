@@ -51,7 +51,7 @@ exports.reservation = async (req, res) => {
 
         let phoneRegx = /^(01[016789]{1})-?[0-9]{4}-?[0-9]{4}$/;
 
-        if (!name || !phoneNumber || !headCount || !scheduleId || !phoneRegx.test(phoneNumber) || isNaN(headCount)) {
+        if (!name || !phoneNumber || !headCount || !scheduleId || !phoneRegx.test(phoneNumber) || isNaN(headCount) || headCount > 16) {
             return res.status(400).send({
                 error: "올바르지 않은 예약 정보"
             });
