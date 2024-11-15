@@ -1,4 +1,3 @@
-const { where } = require('sequelize');
 const { Seat, Schedule, Play, User } = require('../models');
 const Op = require('sequelize').Op;
 
@@ -7,6 +6,7 @@ const Op = require('sequelize').Op;
 exports.showSeats = async (req, res) => {
     try {
         const { scheduleId } = req.query;
+        const { headCount } = req.session.userInfo;
 
         if(!scheduleId) {
             return res.status(400).send({
@@ -20,7 +20,7 @@ exports.showSeats = async (req, res) => {
             }
         });
 
-        res.send({ seats: seats });
+        res.send({ seats: seats, headCount: headCount });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
