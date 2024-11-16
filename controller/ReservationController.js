@@ -144,10 +144,10 @@ exports.showOnSite = async (req, res) => {
         }
 
         const users = await OnSite.findAll({
-            attributes: [ 'id', 'approve' ],
+            attributes: [ 'approve' ],
             include: {
                 model: User,
-                attributes: ['name', 'phone_number', 'head_count'],
+                attributes: [ 'id', 'name', 'phone_number', 'head_count'],
                 where: whereClause,
                 order: [
                     ['name', 'ASC'],
