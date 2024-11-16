@@ -17,7 +17,7 @@ app.use(cors({
 // Redis
 const redisClient = createClient({
     // url: 'redis://localhost:6379' // Redis 서버 URL
-    url: 'podoticket.6inlan.ng.0001.apn2.cache.amazonaws.com:6379' // Redis 서버 URL
+    url: `redis://${process.env.REDIS_HOST}:6379` // Redis 서버 URL
 });
   
 redisClient.connect().catch(console.error);
