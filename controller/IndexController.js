@@ -33,3 +33,8 @@ exports.index = async (req, res) => {
         res.status(500).send("Internal server error");
     }
 };
+
+// health check
+exports.health = async (req, res) => {
+    res.send("ok");
+};
