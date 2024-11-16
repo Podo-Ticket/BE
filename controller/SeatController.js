@@ -41,7 +41,8 @@ exports.checkReserved = async (req, res) => {
 
         let parsedSeats;
         try {
-            parsedSeats = JSON.parse(seats); // 문자열을 배열로 변환
+            const decodedSeats = decodeURIComponent(seats); // URL 디코딩
+            parsedSeats = JSON.parse(decodedSeats); // 문자열을 배열로 변환
         } catch (err) {
             return res.status(400).send({
                 error: "좌석 정보 형식이 잘못되었습니다"
