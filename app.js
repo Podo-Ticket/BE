@@ -34,7 +34,7 @@ app.use(
       cookie: {
         name: 'session_ID',
         httpOnly: true,
-        maxAge: 30 * 60 * 1000, // 30분동안 세션 유지
+        maxAge: 60 * 60 * 1000, // 30분동안 세션 유지
       },
   })
 );
