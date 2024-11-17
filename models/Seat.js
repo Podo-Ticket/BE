@@ -21,6 +21,12 @@ const Seat = (sequelize) => {
                 allowNull: false,
                 comment: '좌석 번호',
             },
+            state: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+                comment: '예약 상태', // false: 대기, true: 확정
+            },
         },
         {
             tableName: 'seat',

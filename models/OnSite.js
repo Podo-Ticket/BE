@@ -1,24 +1,24 @@
 const { DataTypes } = require('sequelize');
 
-const Reservation = (sequelize) => {
+const OnSite = (sequelize) => {
     const model = sequelize.define(
-        'reservation',
+        'on_site',
         {
             id: {
                 type: DataTypes.BIGINT,
                 allowNull: false,
                 primaryKey: true,
                 autoIncrement: true,
-                comment: '예약 pri 키',
+                comment: '현장 예매 pri 키',
             },
-            status: {
+            approve: {
                 type: DataTypes.BOOLEAN,
                 allowNull: false,
-                comment: '예약 상태',
+                defaultValue: false,
+                comment: '현장 예매 수락 여부',
             },
-        },
-        {
-            tableName: 'reservation',
+        },{
+            tableName: 'on_site',
             freezeTableName: true,
             timestamps: false,
             charset: 'utf8mb4',
@@ -28,4 +28,4 @@ const Reservation = (sequelize) => {
     return model;
 };
 
-module.exports = Reservation;
+module.exports = OnSite;

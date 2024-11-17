@@ -1,29 +1,29 @@
 const { DataTypes } = require('sequelize');
 
-const Play = (sequelize) => {
+const Schedule = (sequelize) => {
     const model = sequelize.define(
-        'play', 
+        'schedule',
         {
             id: {
                 type: DataTypes.BIGINT,
                 allowNull: false,
                 primaryKey: true,
                 autoIncrement: true,
-                comment: '공연 pri 키',
+                comment: '일정 pri 키',
             },
-            title: {
-                type: DataTypes.STRING,
+            date_time: {
+                type: DataTypes.DATE,
                 allowNull: false,
-                comment: '공연 제목',
+                comment: '일시',
             },
-            poster: {
-                type: DataTypes.STRING,
+            available_seats: {
+                type: DataTypes.INTEGER,
                 allowNull: false,
-                comment: '공연 포스터',
-            },
+                comment: '예약 가능 좌석 수',
+            }
         },
         {
-            tableName: 'play',
+            tableName: 'schedule',
             freezeTableName: true,
             timestamps: false,
             charset: 'utf8mb4',
@@ -33,4 +33,4 @@ const Play = (sequelize) => {
     return model;
 };
 
-module.exports = Play;
+module.exports = Schedule;
