@@ -3,8 +3,8 @@ exports.enterAdmin = async (req, res) => {
     try {
         const { code }  = req.query;
 
-        let adminCode = "JAKGONG"; // 작은 공간 관리자 코드
-        let play_id = 1; // 작은 공간 공연 id
+        let adminCode = "kwdc"; // 광운극회 단막극 관리자 코드
+        let play_id = 1; // 광운극회 단막극 공연 id
 
         if (code !== adminCode) {
             return res.status(400).send({
