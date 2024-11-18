@@ -257,17 +257,27 @@ exports.showAudience = async (req, res) => {
         }
 
         const seat = await Seat.findOne({
-            attributes: ['row', 'number'],
             where: {
                 id: seatId
-            },
-            include: {
-                model: User,
-                attributes: ['name', 'phone_number', 'head_count']
             }
         });
 
-        res.send({ userInfo: seat });
+        const user = await User.findOne({
+            attributes: ['name', 'phone_number', 'head_count'],
+            where: {
+                id: seat.user_id
+            }
+        });
+
+        const seats = await Seat.findAll({
+            attributes: ['row', 'number'],
+            where: {
+                schedule_id: scheduleId,
+                user_id: seat.user_id
+            }
+        });
+
+        res.send({ user: user, seats: seats });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
