@@ -104,7 +104,35 @@ exports.reservation = async (req, res) => {
             approve: false,
         });
 
+        req.session.userInfo = {
+            id: user.id,
+            phoneNumber: user.phone_number,
+            name: user.name,
+            headCount: user.head_count
+        }
+
+        console.log(user);
+
         res.send({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+};
+
+// 현장 예매 수락 요청
+exports.checkStatus = async (req, res) => {
+    try {
+        const { id } = req.session.userInfo;
+
+        const user = await OnSite.findOne({
+            attributes: ['approve'],
+            where: {
+                user_id: id
+            }
+        });
+
+        res.send({ approve: user.approve });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");

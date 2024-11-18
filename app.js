@@ -14,7 +14,7 @@ app.use(cors({
     credentials: true
 }));
 
-app.set('trust proxy', 1);  // 로드밸런서가 있을 경우 사용ç
+app.set('trust proxy', 1);  // 로드밸런서가 있을 경우 사용
 
 // Redis
 const redisClient = createClient({
