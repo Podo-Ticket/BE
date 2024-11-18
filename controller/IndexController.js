@@ -18,11 +18,11 @@ exports.index = async (req, res) => {
             where: {
                 play_id: playId,
                 date_time: {
-                    [Op.gt]: sequelize.literal("NOW() - INTERVAL '30 minutes'")
+                    [Op.gt]: sequelize.fn('DATE_SUB', sequelize.fn('NOW'), sequelize.literal('INTERVAL 30 MINUTE'))
                 }
             },
             order: [
-                [sequelize.fn('ABS', sequelize.literal('DATEDIFF(date_time, NOW())')), 'ASC']
+                [sequelize.fn('ABS', sequelize.fn('TIMESTAMPDIFF', sequelize.literal('MINUTE'), sequelize.fn('NOW'), sequelize.col('date_time'))), 'ASC']
             ]
         });
 
