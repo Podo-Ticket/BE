@@ -18,8 +18,8 @@ app.set('trust proxy', 1);  // 로드밸런서가 있을 경우 사용
 
 // Redis
 const redisClient = createClient({
-    url: 'redis://localhost:6379' // Redis 서버 URL
-    // url: `redis://${process.env.REDIS_HOST}:6379` // Redis 서버 URL
+    // url: 'redis://localhost:6379' // Redis 서버 URL
+    url: `redis://${process.env.REDIS_HOST}:6379` // Redis 서버 URL
 });
   
 redisClient.connect().catch(console.error);
