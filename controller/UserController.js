@@ -21,6 +21,13 @@ exports.checkReservation = async (req, res) => {
 
         if (user) {
             if (user.state === true) {
+                req.session.userInfo = {
+                    id: user.id,
+                    phoneNumber: user.phone_number,
+                    name: user.name,
+                    headCount: user.head_count
+                }
+
                 return res.send({
                     success: false,
                     data: "이미 발권한 사용자"

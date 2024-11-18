@@ -6,6 +6,7 @@ const controller = require('../controller/ReservationController');
 // user
 router.get("/", controller.showSchedule);
 router.post("/",controller.reservation);
+router.get("/check", controller.checkStatus);
 
 // admin
 router.get("/admin", isAdmin, controller.showOnSite);
