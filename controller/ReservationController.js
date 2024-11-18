@@ -132,6 +132,13 @@ exports.checkStatus = async (req, res) => {
             }
         });
 
+        if (!user) {
+            return res.send({
+                success: false,
+                error: "예약 정보가 없습니다."
+            });
+        };
+
         res.send({ approve: user.approve });
     } catch (err) {
         console.error(err);
