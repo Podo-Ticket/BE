@@ -29,7 +29,7 @@ exports.checkReservation = async (req, res) => {
                 }
 
                 return res.send({
-                    success: false,
+                    user: req.session.userInfo,
                     data: "이미 발권한 사용자"
                 });
             }
