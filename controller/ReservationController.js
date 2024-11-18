@@ -109,9 +109,7 @@ exports.reservation = async (req, res) => {
             phoneNumber: user.phone_number,
             name: user.name,
             headCount: user.head_count
-        }
-
-        console.log(user);
+        };
 
         res.send({ success: true });
     } catch (err) {
