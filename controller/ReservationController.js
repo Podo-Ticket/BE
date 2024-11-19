@@ -61,14 +61,12 @@ exports.showSchedule = async (req, res) => {
 
 // 현장 예매
 exports.reservation = async (req, res) => {
-    const transaction = await sequelize.transaction();
     try {
         const { name, phoneNumber, headCount, scheduleId } = req.body;
 
         let phoneRegx = /^(01[016789]{1})-?[0-9]{4}-?[0-9]{4}$/;
 
         if (!name || !phoneNumber || !headCount || !scheduleId || !phoneRegx.test(phoneNumber) || isNaN(headCount) || headCount > 16) {
-            await transaction.rollback();
             return res.status(400).send({
                 error: "올바르지 않은 예약 정보"
             });
@@ -80,11 +78,9 @@ exports.reservation = async (req, res) => {
                 phone_number: phoneNumber,
                 schedule_id: scheduleId
             },
-            transaction
         });
 
         if (isExists) {
-            await transaction.rollback();
             return res.send({
                 success: false,
                 error: "이미 예약되었습니다."
@@ -102,11 +98,9 @@ exports.reservation = async (req, res) => {
             where: {
                 id: scheduleId
             },
-            transaction
         });
         
         if (seats.available_seats < reservedSeats + headCount) {
-            await transaction.rollback();
             return res.send({
                 success: false,
                 error: "예약 가능 인원을 초과하였습니다."
@@ -118,12 +112,12 @@ exports.reservation = async (req, res) => {
             phone_number: phoneNumber,
             head_count: headCount,
             schedule_id: scheduleId,
-        }, { transaction })
+        })
 
         await OnSite.create({
             user_id: user.id,
             approve: false,
-        }, { transaction });
+        });
 
         req.session.userInfo = {
             id: user.id,
@@ -135,14 +129,10 @@ exports.reservation = async (req, res) => {
 
         await Count.increment('reservationCnt', {
             where: { id: 1 },
-            transaction
         });
-
-        await transaction.commit();
 
         res.send({ success: true });
     } catch (err) {
-        await transaction.rollback();
         console.error(err);
         res.status(500).send("Internal server error");
     }
