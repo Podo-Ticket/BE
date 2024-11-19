@@ -1,4 +1,4 @@
-const { User, Schedule, Seat } = require('../models');
+const { User, Schedule, Seat, sequelize } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 
 // user
@@ -118,11 +118,25 @@ exports.showSchedule = async (req, res) => {
     try {
         const { play } = req.session.admin;
 
+        // const schedules = await Schedule.findAll({
+        //     attributes:['id', 'date_time'],
+        //     where: {
+        //         play_id: play
+        //     }
+        // });
+
+        // 임시
         const schedules = await Schedule.findAll({
-            attributes:['id', 'date_time'],
+            attributes: ['id', 'date_time'],
             where: {
-                play_id: play
-            }
+                play_id: play,
+                date_time: {
+                    [Op.gt]: sequelize.fn('DATE_SUB', sequelize.fn('NOW'), sequelize.literal('INTERVAL 30 MINUTE'))
+                }
+            },
+            order: [
+                [sequelize.fn('ABS', sequelize.fn('TIMESTAMPDIFF', sequelize.literal('MINUTE'), sequelize.fn('NOW'), sequelize.col('date_time'))), 'ASC']
+            ]
         });
 
         const schedulePromiese = schedules.map(async (schedule) => {

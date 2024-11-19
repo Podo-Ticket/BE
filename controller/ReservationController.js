@@ -1,5 +1,5 @@
-const { Seat, Schedule, User, OnSite, Count } = require("../models");
-const Op = require('sequelize').Op;
+const { Seat, Schedule, User, OnSite, Count, sequelize } = require("../models");
+const { Op } = require('sequelize');
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -13,11 +13,25 @@ exports.showSchedule = async (req, res) => {
             });
         }
 
+        // const schedules = await Schedule.findAll({
+        //     attributes: ['id', 'date_time'],
+        //     where: {
+        //         play_id: playId
+        //   }
+        // });
+
+        // 임시
         const schedules = await Schedule.findAll({
             attributes: ['id', 'date_time'],
             where: {
-                play_id: playId
-          }
+                play_id: playId,
+                date_time: {
+                    [Op.gt]: sequelize.fn('DATE_SUB', sequelize.fn('NOW'), sequelize.literal('INTERVAL 30 MINUTE'))
+                }
+            },
+            order: [
+                [sequelize.fn('ABS', sequelize.fn('TIMESTAMPDIFF', sequelize.literal('MINUTE'), sequelize.fn('NOW'), sequelize.col('date_time'))), 'ASC']
+            ]
         });
 
         const schedulePromiese = schedules.map(async (schedule) => {
