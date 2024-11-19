@@ -307,6 +307,21 @@ exports.lockSeats = async (req, res) => {
             });
         }
 
+        const seatConditions = parsedSeats.map(seat => ({
+            schedule_id: scheduleId,
+            row: seat.row,
+            number: seat.number
+        }));
+
+        const reservedSeats = await Seat.count({
+            where: {
+                [Op.or]: seatConditions
+            }
+        })
+
+        if (reservedSeats > 0)
+            return res.send({ success: false });
+
         // 전체 잠금
         await Seat.bulkCreate(parsedSeats.map(seat => ({
             schedule_id: scheduleId,
