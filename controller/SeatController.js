@@ -51,7 +51,7 @@ exports.checkReserved = async (req, res) => {
         }
 
         // 선택한 좌석 수와 예매 인원 대조
-        if(parsedSeats.length != headCount) { // 강한 비교로 바꿔야 함
+        if (parsedSeats.length != headCount) { // 강한 비교로 바꿔야 함
             return res.status(400).send({
                 error: "예매 인원과 선택한 좌석 수가 일치하지 않습니다"
             });
@@ -71,7 +71,6 @@ exports.checkReserved = async (req, res) => {
 
         if (reservedSeats > 0)
             return res.send({ success: false });
-
 
         // 예매 대기 상태 설정
         await Seat.bulkCreate(seatConditions.map(seat => ({
@@ -147,7 +146,7 @@ exports.requestTicketing = async (req, res) => {
         );
 
         await User.update(
-            { state: true},
+            { state: true },
             { where: { id: id } }
         )
 
@@ -275,6 +274,76 @@ exports.showAudience = async (req, res) => {
         });
 
         res.send({ user: user, seats: seats });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 실시간 좌석 편집 - 좌석 잠그기
+exports.lockSeats = async (req, res) => {
+    try {
+        const { scheduleId, seats } = req.body; // seats는 { row, number } 형태의 객체 - 인코딩 필요
+
+        if (!scheduleId || !seats) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID 또는 좌석 정보"
+            });
+        }
+
+        let parsedSeats;
+        try {
+            const decodedSeats = decodeURIComponent(seats); // URL 디코딩
+            parsedSeats = JSON.parse(decodedSeats); // 문자열을 배열로 변환
+        } catch (err) {
+            return res.status(400).send({
+                error: "좌석 정보 형식이 잘못되었습니다"
+            });
+        }
+
+        if (!Array.isArray(parsedSeats)) {
+            return res.status(400).send({
+                error: "좌석 정보는 배열이어야 합니다"
+            });
+        }
+
+        // 전체 잠금
+        await Seat.bulkCreate(parsedSeats.map(seat => ({
+            schedule_id: scheduleId,
+            row: seat.row,
+            number: seat.number,
+            user_id: null,
+            state: true,
+            lock: true
+        })));
+
+        res.send({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 실시간 좌석 편집 - 좌석 잠금 해제
+exports.unlockSeats = async (req, res) => {
+    try {
+        const { scheduleId, seatIds } = req.body;
+
+        if (!scheduleId || !seatIds) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID 또는 좌석 ID 정보"
+            });
+        }
+
+        // 전체 잠금
+        await Seat.destroy({ 
+            where: {
+                schedule_id: scheduleId,
+                id: seatIds 
+            } 
+        });
+
+        res.send({ success: true });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");

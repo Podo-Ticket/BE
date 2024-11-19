@@ -27,6 +27,12 @@ const Seat = (sequelize) => {
                 defaultValue: false,
                 comment: '예약 상태', // false: 대기, true: 확정
             },
+            lock: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+                comment: '잠금 상태', // false: 예약 가능, true: 예약 중
+            }
         },
         {
             tableName: 'seat',
