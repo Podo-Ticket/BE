@@ -1,4 +1,4 @@
-const { Seat, Schedule, User, OnSite } = require("../models");
+const { Seat, Schedule, User, OnSite, Count } = require("../models");
 const Op = require('sequelize').Op;
 
 // user

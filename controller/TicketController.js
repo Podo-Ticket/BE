@@ -1,4 +1,4 @@
-const { Seat, Schedule, Play } = require('../models');
+const { Seat, Schedule, Play, Count } = require('../models');
 
 // 티켓 정보
 exports.showTicketInfo = async (req, res) => {
