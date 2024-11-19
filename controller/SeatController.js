@@ -80,11 +80,15 @@ exports.checkReserved = async (req, res) => {
 
         // 3분 타이머
         const timerId = setTimeout(async () => {
-            // 3분 후에 예약 확정이 아니라면, 좌석 취소
-            const user = await User.findOne({ where: { id: req.session.userInfo.id } });
-
-            if (!user.state) {
-                await Seat.destroy({ where: { user_id: req.session.userInfo.id } });
+            try {
+                // 3분 후에 예약 확정이 아니라면, 좌석 취소
+                const user = await User.findOne({ where: { id: req.session.userInfo.id } });
+    
+                if (user && !user.state) {
+                    await Seat.destroy({ where: { user_id: req.session.userInfo.id } });
+                }
+            } catch (error) {
+                console.error('좌석 취소 중 오류 발생:', error);
             }
         }, 3 * 60 * 1000);
 
