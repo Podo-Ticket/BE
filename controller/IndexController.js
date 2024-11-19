@@ -1,5 +1,4 @@
-const { Play, sequelize } = require('../models');
-const { Schedule } = require('../models');
+const { Play, Schedule, Count, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 // main 화면
@@ -38,6 +37,8 @@ exports.index = async (req, res) => {
                 error: "공연 조회 불가" 
             });
         }
+
+        await Count.increment('mainCnt', { where: { id: 1 } });
 
         res.send({ play: play, schedule: schedule });
     } catch (err) {

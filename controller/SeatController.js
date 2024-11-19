@@ -13,6 +13,8 @@ exports.showSeats = async (req, res) => {
             }
         });
 
+        await Count.increment('pickCnt', { where: { id: 1 } });
+
         res.send({ seats: seats, headCount: headCount });
     } catch (err) {
         console.error(err);
@@ -118,6 +120,8 @@ exports.showTicketing = async (req,res) => {
 
             }
         });
+
+        await Count.increment('ticketingCnt', { where: { id: 1 } });
 
         res.send({ play: play, seats: seats });
     } catch (err) {

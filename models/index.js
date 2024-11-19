@@ -28,6 +28,7 @@ const Survey = require('./Survey')(sequelize);
 const Play = require('./Play')(sequelize);
 const Schedule = require('./Schedule')(sequelize);
 const OnSite = require('./OnSite')(sequelize);
+const Count = require('./Count')(sequelize);
 
 // 모델간의 관계 설정
 // Play : Schedule = 1 : N
@@ -61,6 +62,7 @@ db.Survey = Survey;
 db.Play = Play;
 db.Schedule = Schedule;
 db.OnSite = OnSite;
+db.Count = Count;
 
 db.sequelize = sequelize;
 
