@@ -126,8 +126,14 @@ exports.reservation = async (req, res) => {
                 error: "스케줄을 찾을 수 없습니다."
             });
         }
+
+        console.log(reservedSeats);
+        console.log(seats.available_seats);
+        console.log(headCount);
         
         if (seats.available_seats < reservedSeats + headCount) {
+            console.log(131);
+
             return res.send({
                 success: false,
                 error: "예약 가능 인원을 초과하였습니다."
