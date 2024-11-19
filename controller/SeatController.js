@@ -5,14 +5,7 @@ const Op = require('sequelize').Op;
 // 좌석 화면 - 예약된 좌석만 전달
 exports.showSeats = async (req, res) => {
     try {
-        const { scheduleId } = req.query;
-        const { headCount } = req.session.userInfo;
-
-        if(!scheduleId) {
-            return res.status(400).send({
-                error: "올바르지 않은 공연 일시 ID"
-            });
-        }
+        const { headCount, scheduleId } = req.session.userInfo;
 
         const seats = await Seat.findAll({
             where: {

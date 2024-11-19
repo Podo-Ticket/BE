@@ -25,7 +25,8 @@ exports.checkReservation = async (req, res) => {
                     id: user.id,
                     phoneNumber: user.phone_number,
                     name: user.name,
-                    headCount: user.head_count
+                    headCount: user.head_count,
+                    scheduleId: user.schedule_id
                 }
 
                 return res.send({
@@ -38,7 +39,8 @@ exports.checkReservation = async (req, res) => {
                 id: user.id,
                 phoneNumber: user.phone_number,
                 name: user.name,
-                headCount: user.head_count
+                headCount: user.head_count,
+                scheduleId: user.schedule_id
             }
 
             return res.send({ success: true });
