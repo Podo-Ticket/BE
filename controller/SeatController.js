@@ -210,7 +210,7 @@ exports.realTimeSeats = async (req, res) => {
         }
 
         const seats = await Seat.findAll({
-            attributes: ['id', 'row', 'number', 'state', 'user_id'],
+            attributes: ['id', 'row', 'number', 'state', 'user_id', 'lock'],
             where: { 
                 schedule_id: schedule.id,
                 state: true
