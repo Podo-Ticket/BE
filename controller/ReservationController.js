@@ -98,6 +98,8 @@ exports.reservation = async (req, res) => {
             });
         }
 
+        console.log(101);
+
         // 예약 가능 인원 확인
         const reservedSeats = await Seat.count({
             where: {
@@ -105,11 +107,15 @@ exports.reservation = async (req, res) => {
             }
         });
 
+        console.log(110);
+
         const seats = await Schedule.findOne({
             where: {
                 id: scheduleId
             },
         });
+
+        console.log(118);
         
         if (seats.available_seats < reservedSeats + headCount) {
             return res.send({
@@ -118,6 +124,8 @@ exports.reservation = async (req, res) => {
             });
         }
 
+        console.log(127);
+
         const user = await User.create({
             name: name,
             phone_number: phoneNumber,
@@ -125,10 +133,14 @@ exports.reservation = async (req, res) => {
             schedule_id: scheduleId,
         })
 
+        console.log(136);
+
         await OnSite.create({
             user_id: user.id,
             approve: false,
         });
+
+        console.log(143);
 
         req.session.userInfo = {
             id: user.id,
@@ -138,15 +150,17 @@ exports.reservation = async (req, res) => {
             scheduleId: user.schedule_id
         };
 
+        console.log(153);
+
         await Count.increment('reservationCnt', {
             where: { id: 1 },
         });
 
-        console.log(145);
+        console.log(159);
 
         await transaction.commit();
 
-        console.log(149);
+        console.log(163);
         res.send({ success: true });
     } catch (err) {
         console.log(152);
