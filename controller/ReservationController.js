@@ -108,7 +108,8 @@ exports.reservation = async (req, res) => {
             id: user.id,
             phoneNumber: user.phone_number,
             name: user.name,
-            headCount: user.head_count
+            headCount: user.head_count,
+            scheduleId: user.schedule_id
         };
 
         res.send({ success: true });
