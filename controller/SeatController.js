@@ -135,6 +135,7 @@ exports.showTicketing = async (req,res) => {
 
 // 발권 신청
 exports.requestTicketing = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
         const { id, timerId } = req.session.userInfo;
 
@@ -153,6 +154,7 @@ exports.requestTicketing = async (req, res) => {
         const seats = await Seat.findAll({
             attributes: ['row', 'number'],
             where: { user_id: id },
+            transaction
         });
 
         // 좌석 상태 업데이트
@@ -165,17 +167,21 @@ exports.requestTicketing = async (req, res) => {
                         row: seat.row,
                         number: seat.number
                     }))
-                }
+                },
+                transaction
             }
         );
 
         await User.update(
             { state: true },
-            { where: { id: id } }
+            { where: { id: id }, transaction }
         )
+
+        await transaction.commit(); // 트랜잭션 커밋
 
         res.send({ success: true });
     } catch (err) {
+        await transaction.rollback(); // 트랜잭션 커밋
         console.error(err);
         res.status(500).send("Internal server error");
     }
