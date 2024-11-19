@@ -147,7 +147,7 @@ exports.requestTicketing = async (req, res) => {
         );
 
         await User.update(
-            { state: true},
+            { state: true },
             { where: { id: id } }
         )
 
@@ -280,3 +280,5 @@ exports.showAudience = async (req, res) => {
         res.status(500).send("Internal server error");
     }
 }
+
+// 실시간 좌석 편집 - 좌석 잠그기
