@@ -117,7 +117,7 @@ exports.reservation = async (req, res) => {
 
         console.log(118);
 
-        console.log(seats);
+        // console.log(seats);
 
         if (!seats) {
             console.log('Seats not found');
@@ -127,20 +127,22 @@ exports.reservation = async (req, res) => {
             });
         }
 
-        console.log(reservedSeats);
-        console.log(seats.available_seats);
-        console.log(headCount);
+        console.log(130);
+
+        // console.log(reservedSeats);
+        // console.log(seats.available_seats);
+        // console.log(headCount);
         
-        if (seats.available_seats < reservedSeats + headCount) {
-            console.log(131);
+        // if (seats.available_seats < reservedSeats + headCount) {
+        //     console.log(131);
 
-            return res.send({
-                success: false,
-                error: "예약 가능 인원을 초과하였습니다."
-            });
-        }
+        //     return res.send({
+        //         success: false,
+        //         error: "예약 가능 인원을 초과하였습니다."
+        //     });
+        // }
 
-        console.log(127);
+        console.log(145);
 
         const user = await User.create({
             name: name,
@@ -149,14 +151,14 @@ exports.reservation = async (req, res) => {
             schedule_id: scheduleId,
         })
 
-        console.log(136);
+        console.log(154);
 
         await OnSite.create({
             user_id: user.id,
             approve: false,
         });
 
-        console.log(143);
+        console.log(161);
 
         req.session.userInfo = {
             id: user.id,
@@ -166,20 +168,20 @@ exports.reservation = async (req, res) => {
             scheduleId: user.schedule_id
         };
 
-        console.log(153);
+        console.log(171);
 
         await Count.increment('reservationCnt', {
             where: { id: 1 },
         });
 
-        console.log(159);
+        console.log(177);
 
         await transaction.commit();
 
-        console.log(163);
+        console.log(181);
         res.send({ success: true });
     } catch (err) {
-        console.log(152);
+        console.log(184);
         await transaction.rollback();
         console.error(err);
         res.status(500).send("Internal server error");
