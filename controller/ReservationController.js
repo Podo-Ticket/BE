@@ -61,16 +61,23 @@ exports.showSchedule = async (req, res) => {
 
 // 현장 예매
 exports.reservation = async (req, res) => {
+    console.log(64);
+    const transaction = await sequelize.transaction();
     try {
         const { name, phoneNumber, headCount, scheduleId } = req.body;
 
         let phoneRegx = /^(01[016789]{1})-?[0-9]{4}-?[0-9]{4}$/;
 
+        console.log(71);
+
         if (!name || !phoneNumber || !headCount || !scheduleId || !phoneRegx.test(phoneNumber) || isNaN(headCount) || headCount > 16) {
+            await transaction.rollback();
             return res.status(400).send({
                 error: "올바르지 않은 예약 정보"
             });
         }
+
+        console.log(80);
 
         // 연락처 중복 확인
         const isExists = await User.findOne({
@@ -78,9 +85,13 @@ exports.reservation = async (req, res) => {
                 phone_number: phoneNumber,
                 schedule_id: scheduleId
             },
+            transaction
         });
 
+        console.log(91);
+
         if (isExists) {
+            await transaction.rollback();
             return res.send({
                 success: false,
                 error: "이미 예약되었습니다."
@@ -131,8 +142,15 @@ exports.reservation = async (req, res) => {
             where: { id: 1 },
         });
 
+        console.log(145);
+
+        await transaction.commit();
+
+        console.log(149);
         res.send({ success: true });
     } catch (err) {
+        console.log(152);
+        await transaction.rollback();
         console.error(err);
         res.status(500).send("Internal server error");
     }
