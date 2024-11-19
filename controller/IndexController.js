@@ -38,6 +38,8 @@ exports.index = async (req, res) => {
             });
         }
 
+        await Count.increment('mainCnt', { where: { id: 1 } });
+
         res.send({ play: play, schedule: schedule });
     } catch (err) {
         console.error(err);

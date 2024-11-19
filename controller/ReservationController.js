@@ -111,6 +111,8 @@ exports.reservation = async (req, res) => {
             headCount: user.head_count
         };
 
+        await Count.increment('reservationCnt', { where: { id: 1 } });
+
         res.send({ success: true });
     } catch (err) {
         console.error(err);
