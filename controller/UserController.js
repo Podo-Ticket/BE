@@ -5,17 +5,18 @@ const { Op, Sequelize } = require('sequelize');
 // 예약 확인
 exports.checkReservation = async (req, res) => {
     try {
-        const { phoneNumber } = req.query;
+        const { phoneNumber, scheduleId } = req.query;
 
-        if(!phoneNumber) {
+        if(!phoneNumber || !scheduleId) {
             return res.status(400).send({
-                error: "올바르지 않은 전화번호"
+                error: "올바르지 않은 전화번호 또는 공연 일시 ID"
             });
         }
 
         const user = await User.findOne({
             where: {
-                phone_number: phoneNumber
+                phone_number: phoneNumber,
+                schedule_id: scheduleId
             }
         });
 
