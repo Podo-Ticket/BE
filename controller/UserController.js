@@ -205,12 +205,12 @@ exports.reservationAdmin = async (req, res) => {
             }
         });
         
-        if (seats.available_seats < reservedSeats + headCount) {
-            return res.send({
-                success: false,
-                error: "예약 가능 인원을 초과하였습니다."
-            });
-        }
+        // if (seats.available_seats < reservedSeats + headCount) {
+        //     return res.send({
+        //         success: false,
+        //         error: "예약 가능 인원을 초과하였습니다."
+        //     });
+        // }
 
         await User.create({
             name: name,
