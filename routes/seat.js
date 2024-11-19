@@ -15,5 +15,7 @@ router.delete("/back", isAuthenticated, controller.cancelTicketing);
 // admin
 router.get("/realTime", isAdmin, controller.realTimeSeats);
 router.get("/audience", isAdmin, controller.showAudience);
+router.post("/lock", isAdmin, controller.lockSeats);
+router.delete("/unlock", isAdmin, controller.unlockSeats);
 
 module.exports = router;
