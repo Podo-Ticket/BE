@@ -61,11 +61,14 @@ exports.reservation = async (req, res) => {
         // 연락처 중복 확인
         const isExists = await User.findOne({
             where: {
-                phone_number: phoneNumber
+                phone_number: phoneNumber,
+                schedule_id: scheduleId
             }
         });
 
         if (isExists) {
+            console.log("이미 예약되었습니다.");
+            
             return res.send({
                 success: false,
                 error: "이미 예약되었습니다."

@@ -91,7 +91,7 @@ exports.showList = async (req, res) => {
 
         whereClause.id = {
             [Op.notIn]: Sequelize.literal(
-                '(SELECT user_id FROM on_site WHERE user_id IS NOT NULL)'
+                '(SELECT user_id FROM on_site WHERE approve = false)'
             )
         }
 
