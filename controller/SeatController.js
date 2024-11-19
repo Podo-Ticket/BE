@@ -24,11 +24,13 @@ exports.showSeats = async (req, res) => {
 
 // 좌석 선택 - 이미 예약된 좌석이 있는지 확인
 exports.checkReserved = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
         const { scheduleId, seats } = req.query; // seats는 { row, number } 형태의 객체 - 인코딩 필요
         const { headCount } = req.session.userInfo;
 
         if (!scheduleId || !seats) {
+            await transaction.rollback();
             return res.status(400).send({
                 error: "올바르지 않은 공연 일시 ID 또는 좌석 정보"
             });
@@ -45,6 +47,7 @@ exports.checkReserved = async (req, res) => {
         }
 
         if (!Array.isArray(parsedSeats)) {
+            await transaction.rollback();
             return res.status(400).send({
                 error: "좌석 정보는 배열이어야 합니다"
             });
@@ -52,6 +55,7 @@ exports.checkReserved = async (req, res) => {
 
         // 선택한 좌석 수와 예매 인원 대조
         if (parsedSeats.length != headCount) { // 강한 비교로 바꿔야 함
+            await transaction.rollback();
             return res.status(400).send({
                 error: "예매 인원과 선택한 좌석 수가 일치하지 않습니다"
             });
@@ -94,11 +98,13 @@ exports.checkReserved = async (req, res) => {
 
         req.session.userInfo.timerId = timerId.toString();
 
+        await transaction.commit();
         return res.send({
             success: true,
             seats: parsedSeats
         });
     } catch (err) {
+        await transaction.rollback();
         console.error(err);
         res.status(500).send("Internal server error");
     }
