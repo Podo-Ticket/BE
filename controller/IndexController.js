@@ -1,5 +1,4 @@
-const { Play, sequelize } = require('../models');
-const { Schedule } = require('../models');
+const { Play, Schedule, Count, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 // main 화면
