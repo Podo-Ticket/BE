@@ -1,28 +1,37 @@
-const { User, Schedule, Seat } = require('../models');
+const { User, Schedule, Seat, sequelize } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 
 // user
 // 예약 확인
 exports.checkReservation = async (req, res) => {
     try {
-        const { phoneNumber } = req.query;
+        const { phoneNumber, scheduleId } = req.query;
 
-        if(!phoneNumber) {
+        if(!phoneNumber || !scheduleId) {
             return res.status(400).send({
-                error: "올바르지 않은 전화번호"
+                error: "올바르지 않은 전화번호 또는 공연 일시 ID"
             });
         }
 
         const user = await User.findOne({
             where: {
-                phone_number: phoneNumber
+                phone_number: phoneNumber,
+                schedule_id: scheduleId
             }
         });
 
         if (user) {
             if (user.state === true) {
+                req.session.userInfo = {
+                    id: user.id,
+                    phoneNumber: user.phone_number,
+                    name: user.name,
+                    headCount: user.head_count,
+                    scheduleId: user.schedule_id
+                }
+
                 return res.send({
-                    success: false,
+                    user: req.session.userInfo,
                     data: "이미 발권한 사용자"
                 });
             }
@@ -31,7 +40,8 @@ exports.checkReservation = async (req, res) => {
                 id: user.id,
                 phoneNumber: user.phone_number,
                 name: user.name,
-                headCount: user.head_count
+                headCount: user.head_count,
+                scheduleId: user.schedule_id
             }
 
             return res.send({ success: true });
@@ -82,7 +92,7 @@ exports.showList = async (req, res) => {
 
         whereClause.id = {
             [Op.notIn]: Sequelize.literal(
-                '(SELECT user_id FROM on_site WHERE user_id IS NOT NULL)'
+                '(SELECT user_id FROM on_site WHERE approve = false)'
             )
         }
 
@@ -109,11 +119,25 @@ exports.showSchedule = async (req, res) => {
     try {
         const { play } = req.session.admin;
 
+        // const schedules = await Schedule.findAll({
+        //     attributes:['id', 'date_time'],
+        //     where: {
+        //         play_id: play
+        //     }
+        // });
+
+        // 임시
         const schedules = await Schedule.findAll({
-            attributes:['id', 'date_time'],
+            attributes: ['id', 'date_time'],
             where: {
-                play_id: play
-            }
+                play_id: play,
+                date_time: {
+                    [Op.gt]: sequelize.fn('DATE_SUB', sequelize.fn('NOW'), sequelize.literal('INTERVAL 30 MINUTE'))
+                }
+            },
+            order: [
+                [sequelize.fn('ABS', sequelize.fn('TIMESTAMPDIFF', sequelize.literal('MINUTE'), sequelize.fn('NOW'), sequelize.col('date_time'))), 'ASC']
+            ]
         });
 
         const schedulePromiese = schedules.map(async (schedule) => {
@@ -181,12 +205,12 @@ exports.reservationAdmin = async (req, res) => {
             }
         });
         
-        if (seats.available_seats < reservedSeats + headCount) {
-            return res.send({
-                success: false,
-                error: "예약 가능 인원을 초과하였습니다."
-            });
-        }
+        // if (seats.available_seats < reservedSeats + headCount) {
+        //     return res.send({
+        //         success: false,
+        //         error: "예약 가능 인원을 초과하였습니다."
+        //     });
+        // }
 
         await User.create({
             name: name,

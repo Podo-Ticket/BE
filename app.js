@@ -14,7 +14,7 @@ app.use(cors({
     credentials: true
 }));
 
-app.set('trust proxy', 1);  // 로드밸런서가 있을 경우 사용ç
+app.set('trust proxy', 1);  // 로드밸런서가 있을 경우 사용
 
 // Redis
 const redisClient = createClient({
@@ -34,7 +34,7 @@ app.use(
       cookie: {
         name: 'session_ID',
         httpOnly: true,
-        maxAge: 30 * 60 * 1000, // 30분동안 세션 유지
+        maxAge: 60 * 60 * 1000, // 30분동안 세션 유지
       },
   })
 );

@@ -7,7 +7,7 @@ exports.evaluateService = async (req, res) => {
         const { id } = req.session.userInfo;
 
         const user = await Survey.findOne({
-            where: { id: id }
+            where: { user_id: id }
         });
 
         if (user) {

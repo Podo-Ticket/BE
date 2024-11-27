@@ -1,4 +1,4 @@
-const { Seat, Schedule, Play } = require('../models');
+const { Seat, Schedule, Play, Count } = require('../models');
 
 // 티켓 정보
 exports.showTicketInfo = async (req, res) => {
@@ -17,6 +17,8 @@ exports.showTicketInfo = async (req, res) => {
                 }
             }
         });
+
+        await Count.increment('infoCnt', { where: { id: 1 } });
 
         res.send({ 
             count: seats.length,

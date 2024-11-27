@@ -1,24 +1,35 @@
-const { Play } = require('../models');
-const { Schedule } = require('../models');
+const { Play, Schedule, Count, sequelize } = require('../models');
+const { Op } = require('sequelize');
 
 // main 화면
 exports.index = async (req, res) => {
     try {
-        let { scheduleId } = req.query;
+        let { playId } = req.query;
 
-        if(!scheduleId) {
+        if(!playId) {
             return res.status(400).send({ 
-                error: "올바르지 않은 공연 일시 ID" 
+                error: "올바르지 않은 공연 ID" 
             });
         }
 
-        const play = await Schedule.findOne({
-            attributes: ['id', 'date_time'],
-            where: { id: scheduleId },
-            include: {
-                model: Play,
-                attributes: ['id', 'title', 'poster']
+        const schedule = await Schedule.findOne({
+            attributes: ['id', 'date_time', 'play_id'],
+            where: {
+                play_id: playId,
+                date_time: {
+                    [Op.gt]: sequelize.fn('DATE_SUB', sequelize.fn('NOW'), sequelize.literal('INTERVAL 30 MINUTE'))
+                }
             },
+            order: [
+                [sequelize.fn('ABS', sequelize.fn('TIMESTAMPDIFF', sequelize.literal('MINUTE'), sequelize.fn('NOW'), sequelize.col('date_time'))), 'ASC']
+            ]
+        });
+
+        const play = await Play.findOne({
+            attributes:['title', 'poster'],
+            where: {
+                id: schedule.play_id
+            }
         });
 
         if(!play) {
@@ -27,7 +38,9 @@ exports.index = async (req, res) => {
             });
         }
 
-        res.send({ play: play });
+        await Count.increment('mainCnt', { where: { id: 1 } });
+
+        res.send({ play: play, schedule: schedule });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");

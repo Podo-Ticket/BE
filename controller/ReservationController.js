@@ -1,5 +1,5 @@
-const { Seat, Schedule, User, OnSite } = require("../models");
-const Op = require('sequelize').Op;
+const { Seat, Schedule, User, OnSite, Count, sequelize } = require("../models");
+const { Op } = require('sequelize');
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -13,11 +13,25 @@ exports.showSchedule = async (req, res) => {
             });
         }
 
+        // const schedules = await Schedule.findAll({
+        //     attributes: ['id', 'date_time'],
+        //     where: {
+        //         play_id: playId
+        //   }
+        // });
+
+        // 임시
         const schedules = await Schedule.findAll({
             attributes: ['id', 'date_time'],
             where: {
-                play_id: playId
-          }
+                play_id: playId,
+                date_time: {
+                    [Op.gt]: sequelize.fn('DATE_SUB', sequelize.fn('NOW'), sequelize.literal('INTERVAL 30 MINUTE'))
+                }
+            },
+            order: [
+                [sequelize.fn('ABS', sequelize.fn('TIMESTAMPDIFF', sequelize.literal('MINUTE'), sequelize.fn('NOW'), sequelize.col('date_time'))), 'ASC']
+            ]
         });
 
         const schedulePromiese = schedules.map(async (schedule) => {
@@ -47,30 +61,44 @@ exports.showSchedule = async (req, res) => {
 
 // 현장 예매
 exports.reservation = async (req, res) => {
+    console.log(64);
+    const transaction = await sequelize.transaction();
     try {
         const { name, phoneNumber, headCount, scheduleId } = req.body;
 
         let phoneRegx = /^(01[016789]{1})-?[0-9]{4}-?[0-9]{4}$/;
 
+        console.log(71);
+
         if (!name || !phoneNumber || !headCount || !scheduleId || !phoneRegx.test(phoneNumber) || isNaN(headCount) || headCount > 16) {
+            await transaction.rollback();
             return res.status(400).send({
                 error: "올바르지 않은 예약 정보"
             });
         }
 
+        console.log(80);
+
         // 연락처 중복 확인
         const isExists = await User.findOne({
             where: {
-                phone_number: phoneNumber
-            }
+                phone_number: phoneNumber,
+                schedule_id: scheduleId
+            },
+            transaction
         });
 
+        console.log(91);
+
         if (isExists) {
+            await transaction.rollback();
             return res.send({
                 success: false,
                 error: "이미 예약되었습니다."
             });
         }
+
+        console.log(101);
 
         // 예약 가능 인원 확인
         const reservedSeats = await Seat.count({
@@ -79,18 +107,42 @@ exports.reservation = async (req, res) => {
             }
         });
 
+        console.log(110);
+
         const seats = await Schedule.findOne({
             where: {
                 id: scheduleId
-            }
+            },
         });
-        
-        if (seats.available_seats < reservedSeats + headCount) {
+
+        console.log(118);
+
+        // console.log(seats);
+
+        if (!seats) {
+            console.log('Seats not found');
             return res.send({
                 success: false,
-                error: "예약 가능 인원을 초과하였습니다."
+                error: "스케줄을 찾을 수 없습니다."
             });
         }
+
+        console.log(130);
+
+        // console.log(reservedSeats);
+        // console.log(seats.available_seats);
+        // console.log(headCount);
+        
+        // if (seats.available_seats < reservedSeats + headCount) {
+        //     console.log(131);
+
+        //     return res.send({
+        //         success: false,
+        //         error: "예약 가능 인원을 초과하였습니다."
+        //     });
+        // }
+
+        console.log(145);
 
         const user = await User.create({
             name: name,
@@ -99,12 +151,63 @@ exports.reservation = async (req, res) => {
             schedule_id: scheduleId,
         })
 
+        console.log(154);
+
         await OnSite.create({
             user_id: user.id,
             approve: false,
         });
 
+        console.log(161);
+
+        req.session.userInfo = {
+            id: user.id,
+            phoneNumber: user.phone_number,
+            name: user.name,
+            headCount: user.head_count,
+            scheduleId: user.schedule_id
+        };
+
+        console.log(171);
+
+        await Count.increment('reservationCnt', {
+            where: { id: 1 },
+        });
+
+        console.log(177);
+
+        await transaction.commit();
+
+        console.log(181);
         res.send({ success: true });
+    } catch (err) {
+        console.log(184);
+        await transaction.rollback();
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+};
+
+// 현장 예매 수락 요청
+exports.checkStatus = async (req, res) => {
+    try {
+        const { id } = req.session.userInfo;
+
+        const user = await OnSite.findOne({
+            attributes: ['approve'],
+            where: {
+                user_id: id
+            }
+        });
+
+        if (!user) {
+            return res.send({
+                success: false,
+                error: "예약 정보가 없습니다."
+            });
+        };
+
+        res.send({ approve: user.approve });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");

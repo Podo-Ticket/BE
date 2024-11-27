@@ -1,24 +1,19 @@
-const { Seat, Schedule, Play, User } = require('../models');
+const { Seat, Schedule, Play, User, Count, sequelize } = require('../models');
 const Op = require('sequelize').Op;
 
 // user
 // 좌석 화면 - 예약된 좌석만 전달
 exports.showSeats = async (req, res) => {
     try {
-        const { scheduleId } = req.query;
-        const { headCount } = req.session.userInfo;
-
-        if(!scheduleId) {
-            return res.status(400).send({
-                error: "올바르지 않은 공연 일시 ID"
-            });
-        }
+        const { headCount, scheduleId } = req.session.userInfo;
 
         const seats = await Seat.findAll({
             where: {
                 schedule_id: scheduleId
             }
         });
+
+        await Count.increment('pickCnt', { where: { id: 1 } });
 
         res.send({ seats: seats, headCount: headCount });
     } catch (err) {
@@ -29,15 +24,21 @@ exports.showSeats = async (req, res) => {
 
 // 좌석 선택 - 이미 예약된 좌석이 있는지 확인
 exports.checkReserved = async (req, res) => {
+    console.log(27);
+    const transaction = await sequelize.transaction();
     try {
         const { scheduleId, seats } = req.query; // seats는 { row, number } 형태의 객체 - 인코딩 필요
         const { headCount } = req.session.userInfo;
 
+        console.log(33);
         if (!scheduleId || !seats) {
+            await transaction.rollback();
             return res.status(400).send({
                 error: "올바르지 않은 공연 일시 ID 또는 좌석 정보"
             });
         }
+
+        console.log(41);
 
         let parsedSeats;
         try {
@@ -49,14 +50,20 @@ exports.checkReserved = async (req, res) => {
             });
         }
 
+        console.log(53);
+
         if (!Array.isArray(parsedSeats)) {
+            await transaction.rollback();
             return res.status(400).send({
                 error: "좌석 정보는 배열이어야 합니다"
             });
         }
 
+        console.log(62);
+
         // 선택한 좌석 수와 예매 인원 대조
-        if(parsedSeats.length !== headCount) {
+        if (parsedSeats.length != headCount) { // 강한 비교로 바꿔야 함
+            await transaction.rollback();
             return res.status(400).send({
                 error: "예매 인원과 선택한 좌석 수가 일치하지 않습니다"
             });
@@ -77,7 +84,6 @@ exports.checkReserved = async (req, res) => {
         if (reservedSeats > 0)
             return res.send({ success: false });
 
-
         // 예매 대기 상태 설정
         await Seat.bulkCreate(seatConditions.map(seat => ({
             ...seat,
@@ -86,21 +92,30 @@ exports.checkReserved = async (req, res) => {
 
         // 3분 타이머
         const timerId = setTimeout(async () => {
-            // 3분 후에 예약 확정이 아니라면, 좌석 취소
-            const user = await User.findOne({ where: { id: req.session.userInfo.id } });
-
-            if (!user.state) {
-                await Seat.destroy({ where: { user_id: req.session.userInfo.id } });
+            try {
+                // 3분 후에 예약 확정이 아니라면, 좌석 취소
+                const user = await User.findOne({ where: { id: req.session.userInfo.id } });
+    
+                if (user && !user.state) {
+                    await Seat.destroy({ where: { user_id: req.session.userInfo.id } });
+                }
+            } catch (error) {
+                console.error('좌석 취소 중 오류 발생:', error);
             }
         }, 3 * 60 * 1000);
 
         req.session.userInfo.timerId = timerId.toString();
 
+        console.log(109);
+
+        await transaction.commit();
         return res.send({
             success: true,
             seats: parsedSeats
         });
     } catch (err) {
+        console.log(117);
+        await transaction.rollback();
         console.error(err);
         res.status(500).send("Internal server error");
     }
@@ -126,6 +141,8 @@ exports.showTicketing = async (req,res) => {
             }
         });
 
+        await Count.increment('ticketingCnt', { where: { id: 1 } });
+
         res.send({ play: play, seats: seats });
     } catch (err) {
         console.error(err);
@@ -135,6 +152,8 @@ exports.showTicketing = async (req,res) => {
 
 // 발권 신청
 exports.requestTicketing = async (req, res) => {
+    console.log(155);
+    const transaction = await sequelize.transaction();
     try {
         const { id, timerId } = req.session.userInfo;
 
@@ -144,18 +163,52 @@ exports.requestTicketing = async (req, res) => {
             delete req.session.userInfo.timerId;
         }
         
+        // await Seat.update(
+        //     { state: true },
+        //     { where: { user_id: id } }
+        // );
+
+        console.log(171);
+
+        // 좌석 정보 가져오기
+        const seats = await Seat.findAll({
+            attributes: ['row', 'number'],
+            where: { user_id: id },
+            transaction
+        });
+
+        console.log(180);
+
+        // 좌석 상태 업데이트
         await Seat.update(
             { state: true },
-            { where: { user_id: id } }
+            {
+                where: {
+                    user_id: id,
+                    [Op.or]: seats.map(seat => ({
+                        row: seat.row,
+                        number: seat.number
+                    }))
+                },
+                transaction
+            }
         );
 
+        console.log(197);
+
         await User.update(
-            { state: true},
-            { where: { id: id } }
+            { state: true },
+            { where: { id: id }, transaction }
         )
+
+        console.log(204);
+
+        await transaction.commit(); // 트랜잭션 커밋
 
         res.send({ success: true });
     } catch (err) {
+        console.log(210);
+        await transaction.rollback(); // 트랜잭션 커밋
         console.error(err);
         res.status(500).send("Internal server error");
     }
@@ -214,7 +267,7 @@ exports.realTimeSeats = async (req, res) => {
         }
 
         const seats = await Seat.findAll({
-            attributes: ['id', 'row', 'number', 'state', 'user_id'],
+            attributes: ['id', 'row', 'number', 'state', 'user_id', 'lock'],
             where: { 
                 schedule_id: schedule.id,
                 state: true
@@ -257,17 +310,112 @@ exports.showAudience = async (req, res) => {
         }
 
         const seat = await Seat.findOne({
-            attributes: ['row', 'number'],
             where: {
                 id: seatId
-            },
-            include: {
-                model: User,
-                attributes: ['name', 'phone_number', 'head_count']
             }
         });
 
-        res.send({ userInfo: seat });
+        const user = await User.findOne({
+            attributes: ['name', 'phone_number', 'head_count'],
+            where: {
+                id: seat.user_id
+            }
+        });
+
+        const seats = await Seat.findAll({
+            attributes: ['row', 'number'],
+            where: {
+                schedule_id: scheduleId,
+                user_id: seat.user_id
+            }
+        });
+
+        res.send({ user: user, seats: seats });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 실시간 좌석 편집 - 좌석 잠그기
+exports.lockSeats = async (req, res) => {
+    try {
+        const { scheduleId, seats } = req.body; // seats는 { row, number } 형태의 객체 - 인코딩 필요
+
+        if (!scheduleId || !seats) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID 또는 좌석 정보"
+            });
+        }
+
+        let parsedSeats;
+        try {
+            const decodedSeats = decodeURIComponent(seats); // URL 디코딩
+            parsedSeats = JSON.parse(decodedSeats); // 문자열을 배열로 변환
+        } catch (err) {
+            return res.status(400).send({
+                error: "좌석 정보 형식이 잘못되었습니다"
+            });
+        }
+
+        if (!Array.isArray(parsedSeats)) {
+            return res.status(400).send({
+                error: "좌석 정보는 배열이어야 합니다"
+            });
+        }
+
+        const seatConditions = parsedSeats.map(seat => ({
+            schedule_id: scheduleId,
+            row: seat.row,
+            number: seat.number
+        }));
+
+        const reservedSeats = await Seat.count({
+            where: {
+                [Op.or]: seatConditions
+            }
+        })
+
+        if (reservedSeats > 0)
+            return res.send({ success: false });
+
+        // 전체 잠금
+        await Seat.bulkCreate(parsedSeats.map(seat => ({
+            schedule_id: scheduleId,
+            row: seat.row,
+            number: seat.number,
+            user_id: null,
+            state: true,
+            lock: true
+        })));
+
+        res.send({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal server error");
+    }
+}
+
+// 실시간 좌석 편집 - 좌석 잠금 해제
+exports.unlockSeats = async (req, res) => {
+    try {
+        const { scheduleId, seatIds } = req.body;
+
+        if (!scheduleId || !seatIds) {
+            return res.status(400).send({
+                error: "올바르지 않은 공연 일시 ID 또는 좌석 ID 정보"
+            });
+        }
+
+        // 전체 잠금
+        await Seat.destroy({ 
+            where: {
+                schedule_id: scheduleId,
+                id: seatIds 
+            } 
+        });
+
+        res.send({ success: true });
     } catch (err) {
         console.error(err);
         res.status(500).send("Internal server error");
