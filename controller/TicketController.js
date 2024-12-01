@@ -1,4 +1,4 @@
-const { Seat, Schedule, Play, Count } = require('../models');
+const { Seat, Schedule, Play, Count, Survey } = require('../models');
 
 // 티켓 정보
 exports.showTicketInfo = async (req, res) => {
@@ -18,11 +18,16 @@ exports.showTicketInfo = async (req, res) => {
             }
         });
 
+        const isSurvey = await Survey.findOne({
+            where: { user_id: id }
+        });
+
         await Count.increment('infoCnt', { where: { id: 1 } });
 
         res.send({ 
             count: seats.length,
             seats: seats,
+            isSurvey: (isSurvey) ? true : false
         });
     } catch (err) {
         console.error(err);
