@@ -61,34 +61,60 @@ exports.showSchedule = async (req, res) => {
 
 // 현장 예매
 exports.reservation = async (req, res) => {
-    console.log(64);
     const transaction = await sequelize.transaction();
     try {
         const { name, phoneNumber, headCount, scheduleId } = req.body;
 
         let phoneRegx = /^(01[016789]{1})-?[0-9]{4}-?[0-9]{4}$/;
 
-        console.log(71);
-
-        if (!name || !phoneNumber || !headCount || !scheduleId || !phoneRegx.test(phoneNumber) || isNaN(headCount) || headCount > 16) {
-            await transaction.rollback();
+        if (!name || !phoneNumber || !headCount || !scheduleId || 
+            !phoneRegx.test(phoneNumber) || isNaN(headCount) || parseInt(headCount) > 16) {
             return res.status(400).send({
                 error: "올바르지 않은 예약 정보"
             });
         }
 
-        console.log(80);
+        // 2. 한 번의 쿼리로 예약 가능 인원 확인
+        const scheduleInfo = await Schedule.findOne({
+            where: { id: scheduleId },
+            attributes: [
+                'id', 
+                'available_seats',
+                [sequelize.literal(`(
+                    SELECT COUNT(*) 
+                    FROM seat 
+                    WHERE schedule_id = ${scheduleId}
+                )`), 'reserved_seats']
+            ],
+            transaction
+        });
 
-        // 연락처 중복 확인
+        if (!scheduleInfo) {
+            await transaction.rollback();
+            return res.send({
+                success: false,
+                error: "스케줄을 찾을 수 없습니다."
+            });
+        }
+
+        // 3. 좌석 가용성 체크
+        if (scheduleInfo.available_seats < scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount)) {
+            await transaction.rollback();
+            return res.send({
+                success: false,
+                error: "예약 가능 인원을 초과하였습니다."
+            });
+        }
+
+        // 4. 중복 예약 체크 - FOR UPDATE 락을 사용하여 동시성 제어
         const isExists = await User.findOne({
             where: {
                 phone_number: phoneNumber,
                 schedule_id: scheduleId
             },
+            lock: transaction.LOCK.UPDATE, // 동시성 제어
             transaction
         });
-
-        console.log(91);
 
         if (isExists) {
             await transaction.rollback();
@@ -98,68 +124,28 @@ exports.reservation = async (req, res) => {
             });
         }
 
-        console.log(101);
-
-        // 예약 가능 인원 확인
-        const reservedSeats = await Seat.count({
-            where: {
+        // 5. 예약 생성 - Promise.all로 병렬 처리
+        const [user, _] = await Promise.all([
+            User.create({
+                name,
+                phone_number: phoneNumber,
+                head_count: headCount,
                 schedule_id: scheduleId,
-            }
-        });
+            }, { transaction }),
+            
+            Count.increment('reservationCnt', {
+                where: { id: 1 },
+                transaction
+            })
+        ]);
 
-        console.log(110);
-
-        const seats = await Schedule.findOne({
-            where: {
-                id: scheduleId
-            },
-        });
-
-        console.log(118);
-
-        // console.log(seats);
-
-        if (!seats) {
-            console.log('Seats not found');
-            return res.send({
-                success: false,
-                error: "스케줄을 찾을 수 없습니다."
-            });
-        }
-
-        console.log(130);
-
-        // console.log(reservedSeats);
-        // console.log(seats.available_seats);
-        // console.log(headCount);
-        
-        // if (seats.available_seats < reservedSeats + headCount) {
-        //     console.log(131);
-
-        //     return res.send({
-        //         success: false,
-        //         error: "예약 가능 인원을 초과하였습니다."
-        //     });
-        // }
-
-        console.log(145);
-
-        const user = await User.create({
-            name: name,
-            phone_number: phoneNumber,
-            head_count: headCount,
-            schedule_id: scheduleId,
-        })
-
-        console.log(154);
-
+        // 6. 현장 예약 정보 생성
         await OnSite.create({
             user_id: user.id,
             approve: false,
-        });
+        }, { transaction });
 
-        console.log(161);
-
+        // 7. 세션 정보 업데이트
         req.session.userInfo = {
             id: user.id,
             phoneNumber: user.phone_number,
@@ -168,20 +154,9 @@ exports.reservation = async (req, res) => {
             scheduleId: user.schedule_id
         };
 
-        console.log(171);
-
-        await Count.increment('reservationCnt', {
-            where: { id: 1 },
-        });
-
-        console.log(177);
-
         await transaction.commit();
-
-        console.log(181);
         res.send({ success: true });
     } catch (err) {
-        console.log(184);
         await transaction.rollback();
         console.error(err);
         res.status(500).send("Internal server error");
