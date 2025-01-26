@@ -6,15 +6,20 @@ const app = express();
 const PORT = 8080;
 const cors = require('cors');
 const { sequelize } = require('./models');
+const { swaggerUi, specs } = require('./swagger/swagger');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors({
-    origin: true,
-    credentials: true
+  origin: true,
+  credentials: true,
+  // methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  // allowedHeaders: ['Content-Type', 'X-Requested-With', 'Accept']
 }));
 
-app.set('trust proxy', 1);  // 로드밸런서가 있을 경우 사용
+// express 애플리케이션에 프록시 서버를 믿을 수 있다고 알려주는 것
+// express는 요청 헤더의 X-Forwarded-Proto 값을 사용하여 원래 프로토콜을 복원
+app.set('trust proxy', true);  // 로드밸런서가 있을 경우 사용
 
 // Redis
 const redisClient = createClient({
@@ -72,6 +77,9 @@ app.use("/reservation", reservationRouter);
 // 관리자
 const adminRouter = require('./routes/admin');
 app.use("/admin", adminRouter);
+
+// swagger
+app.use("/swagger-ui", swaggerUi.serve, swaggerUi.setup(specs));
 
 app.get('*', (req, res) => {
   res.send('404');
