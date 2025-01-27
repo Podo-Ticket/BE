@@ -44,6 +44,9 @@ app.use(
   })
 );
 
+// swagger
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
 app.use('/uploads', express.static(__dirname + '/uploads'));
 
 // 메인
@@ -77,9 +80,6 @@ app.use("/reservation", reservationRouter);
 // 관리자
 const adminRouter = require('./routes/admin');
 app.use("/admin", adminRouter);
-
-// swagger
-app.use("/swagger-ui", swaggerUi.serve, swaggerUi.setup(specs));
 
 app.get('*', (req, res) => {
   res.send('404');
