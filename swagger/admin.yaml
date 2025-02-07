@@ -1,6 +1,8 @@
 paths:
   /admin:
     get:
+      tags:
+        - Admin
       summary: 관리자 페이지 로그인(접속)
       parameters:
         - in: query

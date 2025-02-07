@@ -1,0 +1,19 @@
+paths:
+  /:
+    get:
+      summary: 메인화면
+      parameters:
+        - in: query
+          name: playId
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 메인화면
+        400:
+          description: 올바르지 않은 공연 Id
+        404:
+          description: 공연이 조회 불가
+        500:
+          description: 서버 에러

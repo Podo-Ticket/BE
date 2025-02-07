@@ -15,12 +15,42 @@ const options = {
         description: "Local Development",
       },
     ],
+    tags: [
+        {
+            name: 'Play',
+            description: '공연 정보',
+        },
+        {
+            name: 'User',
+            description: '예매자',
+        },
+        {
+            name: 'Seat',
+            description: '좌석',
+        },
+        {
+            name: 'Ticket',
+            description: '티켓',
+        },
+        {
+            name: 'Survey',
+            description: '서비스 평가',
+        },
+        {
+            name: 'Reservation',
+            description: '현장 예매',
+        },
+        {
+            name: 'Admin',
+            description: '관리자 접속',
+        },
+    ],
     components: {
         securitySchemes: {
             cookieAuth: {
                 type: 'apiKey',
                 in: 'cookie',
-                name: 'session_ID',
+                name: 'connect.sid',
             },
         },
     },

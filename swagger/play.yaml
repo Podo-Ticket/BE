@@ -1,0 +1,60 @@
+paths:
+  /play/post:
+    post:
+      tags:
+        - Play
+      summary: 공연 추가
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                poster:
+                  type: string
+                  format: binary
+              required:
+                - title
+                - poster
+      responses:
+        200:
+          description: 공연 추가 성공
+        400:
+          description: 올바르지 않은 공연 제목
+        500:
+          description: 서버 에러
+  /play/schedule:
+    post:
+      tags:
+        - Play
+      summary: 공연 일정 추가
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                playId:
+                  type: integer
+                dateTime:
+                  type: string
+                  format: date-time
+                  pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$'
+                  example: '2025-01-27 08:00'
+                availableSeats:
+                  type: integer
+              required:
+                - playId
+                - date
+                - availableSeats
+      responses:
+        200:
+          description: 공연 일정 추가 성공
+        400:
+          description: 올바르지 않은 공연 ID 또는 일정 또는 좌석 수
+        500:
+          description: 서버 에러
