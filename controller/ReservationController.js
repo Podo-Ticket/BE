@@ -198,32 +198,6 @@ exports.reservation = async (req, res) => {
   }
 };
 
-// 현장 예매 수락 요청
-exports.checkStatus = async (req, res) => {
-  try {
-    const { id } = req.session.userInfo;
-
-    const user = await OnSite.findOne({
-      attributes: ['approve'],
-      where: {
-        user_id: id,
-      },
-    });
-
-    if (!user) {
-      return res.send({
-        success: false,
-        error: '예약 정보가 없습니다.',
-      });
-    }
-
-    res.send({ approve: user.approve });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Internal server error');
-  }
-};
-
 // admin
 // 현장 예매 관리 리스트
 exports.showOnSite = async (req, res) => {
@@ -282,6 +256,7 @@ exports.showOnSite = async (req, res) => {
 exports.approveOnSite = async (req, res) => {
   try {
     const { userIds, scheduleId } = req.body;
+    const io = req.app.get('io'); // ✅ app에서 io 가져오기
 
     if (!userIds || !Array.isArray(userIds) || !scheduleId) {
       return res.status(400).send({
@@ -332,10 +307,24 @@ exports.approveOnSite = async (req, res) => {
       }
     );
 
-    res.send({ success: true });
+    // 5. WebSocket 실시간 알림 전송
+    userIds.forEach((userId) => {
+      const message = {
+        type: 'approval',
+        message: `사용자 ${userId}님의 현장 신청이 승인되었습니다.`,
+      };
+      console.log(`Sending WebSocket message to user:${userId}`, message); // 로그 추가
+      io.emit(`user:${userId}`, message);
+    });
+
+    // 응답 반환
+    res.status(200).json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Internal server error');
+    console.error('에러 발생:', err);
+    res.status(500).json({
+      success: false,
+      error: '서버 내부 오류',
+    });
   }
 };
 
