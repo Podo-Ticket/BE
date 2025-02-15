@@ -1,12 +1,13 @@
 const express = require('express');
 const session = require('express-session');
-const RedisStore = require('connect-redis').default;
 const { createClient } = require('redis');
 const app = express();
 const PORT = 8080;
 const cors = require('cors');
 const { sequelize } = require('./models');
 const { swaggerUi, specs } = require('./swagger/swagger');
+const http = require('http');
+const { Server } = require('socket.io');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -24,10 +25,11 @@ app.set('trust proxy', true); // 로드밸런서가 있을 경우 사용
 // Redis
 const redisClient = createClient({
   url: 'redis://localhost:6379', // Redis 서버 URL
-  // url: `redis://${process.env.REDIS_HOST}:6379` // Redis 서버 URL
 });
 
 redisClient.connect().catch(console.error);
+
+const RedisStore = require('connect-redis').default;
 
 // 세션 설정
 app.use(
@@ -85,8 +87,35 @@ app.get('*', (req, res) => {
   res.send('404');
 });
 
+let server;
+
+/// 서버 실행
 sequelize.sync({ force: false }).then(() => {
-  app.listen(PORT, () => {
+  // HTTP 서버 생성
+  server = http.createServer(app);
+
+  // WebSocket 설정
+  const io = new Server(server, {
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST'],
+    },
+  });
+
+  // WebSocket 객체를 app에 저장하여 다른 모듈에서 접근할 수 있도록 함
+  app.set('io', io);
+
+  // WebSocket 이벤트 처리
+  io.on('connection', (socket) => {
+    console.log(`사용자 연결됨: ${socket.id}`);
+
+    socket.on('disconnect', () => {
+      console.log(`사용자 연결 해제: ${socket.id}`);
+    });
+  });
+
+  // 서버 실행
+  server.listen(PORT, () => {
     console.log(`http://localhost:${PORT}`);
   });
 });
