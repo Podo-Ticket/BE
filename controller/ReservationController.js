@@ -97,7 +97,7 @@ exports.reservation = async (req, res) => {
       });
     }
 
-    // 2. 한 번의 쿼리로 예약 가능 인원 확인
+    // 한 번의 쿼리로 예약 가능 인원 확인
     const scheduleInfo = await Schedule.findOne({
       where: { id: scheduleId },
       attributes: [
@@ -123,7 +123,7 @@ exports.reservation = async (req, res) => {
       });
     }
 
-    // 3. 좌석 가용성 체크
+    // 좌석 가용성 체크
     if (
       scheduleInfo.available_seats <
       scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount)
@@ -135,7 +135,7 @@ exports.reservation = async (req, res) => {
       });
     }
 
-    // 4. 중복 예약 체크 - FOR UPDATE 락을 사용하여 동시성 제어
+    // 중복 예약 체크 - FOR UPDATE 락을 사용하여 동시성 제어
     const isExists = await User.findOne({
       where: {
         phone_number: phoneNumber,
@@ -153,7 +153,7 @@ exports.reservation = async (req, res) => {
       });
     }
 
-    // 5. 예약 생성 - Promise.all로 병렬 처리
+    // 예약 생성 - Promise.all로 병렬 처리
     const [user, _] = await Promise.all([
       User.create(
         {
@@ -171,7 +171,7 @@ exports.reservation = async (req, res) => {
       }),
     ]);
 
-    // 6. 현장 예약 정보 생성
+    // 현장 예약 정보 생성
     await OnSite.create(
       {
         user_id: user.id,
@@ -180,7 +180,7 @@ exports.reservation = async (req, res) => {
       { transaction }
     );
 
-    // 7. 세션 정보 업데이트
+    // 세션 정보 업데이트
     req.session.userInfo = {
       id: user.id,
       phoneNumber: user.phone_number,
