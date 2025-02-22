@@ -86,7 +86,7 @@ exports.showList = async (req, res) => {
       ),
     };
 
-    const users = await User.findAll({
+    const usersPromise = await User.findAll({
       attributes: ['id', 'name', 'phone_number', 'head_count', 'state'],
       where: whereClause,
       order: [
@@ -95,7 +95,14 @@ exports.showList = async (req, res) => {
       ],
     });
 
-    const ticketingCnt = users.filter((user) => user.state === true).length;
+    const ticketingCntPromise = User.count({
+      where: { ...whereClause, state: true },
+    });
+
+    const [users, ticketingCnt] = await Promise.all([
+      usersPromise,
+      ticketingCntPromise,
+    ]);
 
     res.send({ total: users.length, ticketingCnt: ticketingCnt, users: users });
   } catch (err) {
