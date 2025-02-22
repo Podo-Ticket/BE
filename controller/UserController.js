@@ -170,6 +170,7 @@ exports.showSchedule = async (req, res) => {
 
 // 명단 추가
 exports.reservationAdmin = async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
     const { name, phoneNumber, headCount, scheduleId } = req.body;
 
@@ -189,47 +190,74 @@ exports.reservationAdmin = async (req, res) => {
       });
     }
 
-    // 연락처 중복 확인
-    const isExists = await User.findOne({
-      where: {
-        phone_number: phoneNumber,
-      },
+    // 한 번의 쿼리로 예약 가능 인원 확인
+    const scheduleInfo = await Schedule.findOne({
+      where: { id: scheduleId },
+      attributes: [
+        'id',
+        'available_seats',
+        [
+          sequelize.literal(`(
+                    SELECT COUNT(*) 
+                    FROM seat 
+                    WHERE schedule_id = ${scheduleId}
+                )`),
+          'reserved_seats',
+        ],
+      ],
+      transaction,
     });
 
-    if (isExists) {
+    if (!scheduleInfo) {
+      await transaction.rollback();
       return res.send({
         success: false,
-        error: '이미 예약되어있습니다.',
+        error: '스케줄을 찾을 수 없습니다.',
       });
     }
 
-    // 예약 가능 인원 확인
-    const reservedSeats = await Seat.count({
+    // 좌석 가용성 체크
+    if (
+      scheduleInfo.available_seats <
+      scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount)
+    ) {
+      await transaction.rollback();
+      return res.send({
+        success: false,
+        error: '예약 가능 인원을 초과하였습니다.',
+      });
+    }
+
+    // 중복 예약 체크 - FOR UPDATE 락을 사용하여 동시성 제어
+    const isExists = await User.findOne({
       where: {
+        phone_number: phoneNumber,
         schedule_id: scheduleId,
       },
+      lock: transaction.LOCK.UPDATE, // 동시성 제어
+      transaction,
     });
 
-    const seats = await Schedule.findOne({
-      where: {
-        id: scheduleId,
+    if (isExists) {
+      await transaction.rollback();
+      return res.send({
+        success: false,
+        error: '이미 예약되었습니다.',
+      });
+    }
+
+    // 예약 생성
+    await User.create(
+      {
+        name,
+        phone_number: phoneNumber,
+        head_count: headCount,
+        schedule_id: scheduleId,
       },
-    });
+      { transaction }
+    );
 
-    // if (seats.available_seats < reservedSeats + headCount) {
-    //     return res.send({
-    //         success: false,
-    //         error: "예약 가능 인원을 초과하였습니다."
-    //     });
-    // }
-
-    await User.create({
-      name: name,
-      phone_number: phoneNumber,
-      head_count: headCount,
-      schedule_id: scheduleId,
-    });
-
+    await transaction.commit();
     res.send({ success: true });
   } catch (err) {
     console.error(err);
