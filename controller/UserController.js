@@ -1,4 +1,4 @@
-const { User, Schedule, Seat, sequelize } = require('../models');
+const { User, Schedule, sequelize } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 
 // user
