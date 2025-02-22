@@ -312,12 +312,6 @@ exports.deleteAudience = async (req, res) => {
       });
     }
 
-    await Seat.destroy({
-      where: {
-        user_id: userId,
-      },
-    });
-
     await User.destroy({
       where: {
         id: userId,
