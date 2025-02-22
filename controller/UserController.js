@@ -286,13 +286,11 @@ exports.showAudienceInfo = async (req, res) => {
       ],
       where: {
         id: userId,
+        schedule_id: scheduleId,
       },
       include: {
         model: Schedule,
         attributes: ['date_time'],
-        where: {
-          id: scheduleId,
-        },
       },
     });
 
