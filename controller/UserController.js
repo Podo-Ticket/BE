@@ -125,7 +125,16 @@ exports.showSchedule = async (req, res) => {
 
     // 임시
     const schedules = await Schedule.findAll({
-      attributes: ['id', 'date_time'],
+      attributes: [
+        'id',
+        'date_time',
+        [
+          sequelize.literal(
+            `available_seats - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id)`
+          ),
+          'free_seats',
+        ],
+      ],
       where: {
         play_id: play,
         date_time: {
@@ -151,25 +160,6 @@ exports.showSchedule = async (req, res) => {
         ],
       ],
     });
-
-    const schedulePromiese = schedules.map(async (schedule) => {
-      const reservedSeats = await Seat.count({
-        where: {
-          schedule_id: schedule.id,
-        },
-      });
-
-      const seats = await Schedule.findOne({
-        where: {
-          id: schedule.id,
-        },
-      });
-
-      schedule.dataValues.available_seats =
-        seats.available_seats - reservedSeats;
-    });
-
-    await Promise.all(schedulePromiese);
 
     res.send({ schedules: schedules });
   } catch (err) {
