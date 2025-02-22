@@ -327,6 +327,7 @@ exports.deleteAudience = async (req, res) => {
 
 // 수정 중 - 회원 정보 수정
 exports.updateAudience = async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
     const { userId, name, phoneNumber, headCount, scheduleId } = req.body;
 
@@ -347,20 +348,38 @@ exports.updateAudience = async (req, res) => {
       });
     }
 
-    // 예약 가능 인원 확인
-    const reservedSeats = await Seat.count({
-      where: {
-        schedule_id: scheduleId,
-      },
+    // 한 번의 쿼리로 예약 가능 인원 확인
+    const scheduleInfo = await Schedule.findOne({
+      where: { id: scheduleId },
+      attributes: [
+        'id',
+        'available_seats',
+        [
+          sequelize.literal(`(
+                    SELECT COUNT(*) 
+                    FROM seat 
+                    WHERE schedule_id = ${scheduleId}
+                )`),
+          'reserved_seats',
+        ],
+      ],
+      transaction,
     });
 
-    const seats = await Schedule.findOne({
-      where: {
-        id: scheduleId,
-      },
-    });
+    if (!scheduleInfo) {
+      await transaction.rollback();
+      return res.send({
+        success: false,
+        error: '스케줄을 찾을 수 없습니다.',
+      });
+    }
 
-    if (seats.available_seats < reservedSeats + headCount) {
+    // 좌석 가용성 체크
+    if (
+      scheduleInfo.available_seats <
+      scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount)
+    ) {
+      await transaction.rollback();
       return res.send({
         success: false,
         error: '예약 가능 인원을 초과하였습니다.',
@@ -378,7 +397,8 @@ exports.updateAudience = async (req, res) => {
         where: {
           id: userId,
         },
-      }
+      },
+      { transaction }
     );
 
     res.send({ success: true });
