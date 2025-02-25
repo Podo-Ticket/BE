@@ -365,17 +365,14 @@ exports.deleteOnSite = async (req, res) => {
       });
     }
 
-    await OnSite.destroy({
-      where: {
-        user_id: userIds,
-      },
-    });
-
-    await User.destroy({
-      where: {
-        id: userIds,
-      },
-    });
+    await Promise.all([
+      OnSite.destroy({
+        where: { user_id: { [Op.in]: userIds } },
+      }),
+      User.destroy({
+        where: { id: { [Op.in]: userIds } },
+      }),
+    ]);
 
     res.send({ success: true });
   } catch {
