@@ -220,7 +220,7 @@ exports.showOnSite = async (req, res) => {
       whereClause.approve = approve;
     }
 
-    const users = await OnSite.findAll({
+    const usersPromises = await OnSite.findAll({
       attributes: ['approve'],
       include: {
         model: User,
@@ -233,7 +233,22 @@ exports.showOnSite = async (req, res) => {
       },
     });
 
-    const approvalCnt = users.filter((user) => user.approve === true).length;
+    const approvalCntPromise = await OnSite.count({
+      where: {
+        approve: true,
+      },
+      include: [
+        {
+          model: User,
+          where: whereClause,
+        },
+      ],
+    });
+
+    const [users, approvalCnt] = await Promise.all([
+      usersPromises,
+      approvalCntPromise,
+    ]);
 
     res.send({ total: users.length, approvalCnt: approvalCnt, users: users });
   } catch (err) {
