@@ -279,51 +279,53 @@ exports.approveOnSite = async (req, res) => {
         io.emit(`user:${userId}`, message);
       });
 
-      await OnSite.destroy({
-        where: {
-          user_id: {
-            [Op.in]: userIds,
-          },
-        },
-      });
-
-      await User.destroy({
-        where: {
-          id: {
-            [Op.in]: userIds,
-          },
-        },
-      });
+      await Promise.all([
+        OnSite.destroy({
+          where: { user_id: { [Op.in]: userIds } },
+        }),
+        User.destroy({
+          where: { id: { [Op.in]: userIds } },
+        }),
+      ]);
 
       return res.send({ accept: false });
     }
 
-    let totalHeadCount = 0;
+    // 사용자들의 head_count 합산
+    const users = await User.findAll({
+      where: {
+        id: { [Op.in]: userIds },
+      },
+      attributes: ['id', 'head_count'],
+    });
 
-    for (const userId of userIds) {
-      const user = await User.findOne({
-        where: {
-          id: userId,
-        },
+    if (users.length !== userIds.length) {
+      return res.send({
+        success: false,
+        error: '일부 사용자를 찾을 수 없습니다.',
       });
-
-      totalHeadCount += user.head_count;
     }
 
-    // 예약 가능 인원 확인
-    const reservedSeats = await Seat.count({
-      where: {
-        schedule_id: scheduleId,
-      },
-    });
+    const totalHeadCnt = users.reduce((sum, user) => sum + user.head_count, 0);
 
-    const seats = await Schedule.findOne({
-      where: {
-        id: scheduleId,
-      },
-    });
+    const [reservedSeats, schedule] = await Promise.all([
+      Seat.count({
+        where: { schedule_id: scheduleId },
+      }),
+      Schedule.findOne({
+        where: { id: scheduleId },
+        attributes: ['available_seats'],
+      }),
+    ]);
 
-    if (seats.available_seats < reservedSeats + totalHeadCount) {
+    if (!schedule) {
+      return res.send({
+        success: false,
+        error: '스케줄을 찾을 수 없습니다.',
+      });
+    }
+
+    if (schedule.available_seats < reservedSeats + totalHeadCnt) {
       return res.send({
         success: false,
         error: '예약 가능 인원을 초과하였습니다.',
@@ -331,14 +333,8 @@ exports.approveOnSite = async (req, res) => {
     }
 
     await OnSite.update(
-      {
-        approve: true,
-      },
-      {
-        where: {
-          user_id: userIds, // 일괄 업데이트
-        },
-      }
+      { approve: true },
+      { where: { user_id: { [Op.in]: userIds } } }
     );
 
     // WebSocket 실시간 알림 전송
@@ -347,17 +343,14 @@ exports.approveOnSite = async (req, res) => {
         type: 'approval',
         message: `사용자 ${userId}님의 현장 신청이 승인되었습니다.`,
       };
-      console.log(`Sending WebSocket message to user:${userId}`, message); // 로그 추가
+      console.log(`Sending WebSocket message to user:${userId}`, message);
       io.emit(`user:${userId}`, message);
     });
 
     res.send({ accept: true });
   } catch (err) {
-    console.error('에러 발생:', err);
-    res.status(500).json({
-      success: false,
-      error: '서버 내부 오류',
-    });
+    console.error(err);
+    res.status(500).send('Internal server error');
   }
 };
 
