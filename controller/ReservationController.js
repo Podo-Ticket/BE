@@ -261,7 +261,7 @@ exports.showOnSite = async (req, res) => {
 exports.approveOnSite = async (req, res) => {
   try {
     const { userIds, scheduleId } = req.body;
-    const io = req.app.get('io'); // ✅ app에서 io 가져오기
+    const io = req.app.get('io');
 
     if (!userIds || !Array.isArray(userIds) || !scheduleId) {
       return res.status(400).send({
@@ -312,7 +312,7 @@ exports.approveOnSite = async (req, res) => {
       }
     );
 
-    // 5. WebSocket 실시간 알림 전송
+    // WebSocket 실시간 알림 전송
     userIds.forEach((userId) => {
       const message = {
         type: 'approval',
