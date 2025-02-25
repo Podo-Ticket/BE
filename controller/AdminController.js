@@ -1,3 +1,6 @@
+const { Schedule, sequelize } = require('../models');
+const { Op } = require('sequelize');
+
 // 접속
 exports.enterAdmin = async (req, res) => {
   try {
@@ -18,6 +21,40 @@ exports.enterAdmin = async (req, res) => {
     };
 
     res.send({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal server error');
+  }
+};
+
+// 메인
+exports.showMain = async (req, res) => {
+  try {
+    const { play } = req.session.admin;
+    console.log('play', play);
+
+    const info = await Schedule.findOne({
+      attributes: [
+        'id',
+        'date_time',
+        'available_seats',
+        [
+          sequelize.literal(
+            `available_seats - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id)`
+          ),
+          'free_seats',
+        ],
+      ],
+      where: {
+        play_id: play,
+        date_time: {
+          [Op.gt]: sequelize.fn('NOW'),
+        },
+      },
+      order: [['date_time', 'ASC']],
+    });
+
+    res.send({ info });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
