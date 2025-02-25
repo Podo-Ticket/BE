@@ -252,16 +252,45 @@ exports.showOnSite = async (req, res) => {
   }
 };
 
-// 수락
+// 수락 / 거절
 exports.approveOnSite = async (req, res) => {
   try {
-    const { userIds, scheduleId } = req.body;
+    const { userIds, scheduleId, check } = req.body;
     const io = req.app.get('io'); // ✅ app에서 io 가져오기
 
-    if (!userIds || !Array.isArray(userIds) || !scheduleId) {
+    if (!userIds || !Array.isArray(userIds) || !scheduleId || check == null) {
       return res.status(400).send({
-        error: '올바르지 않은 사용자 ID 또는 공연 일시 ID',
+        error: '올바르지 않은 사용자 ID, 공연 일시 ID, 수락 여부',
       });
+    }
+
+    if (!check) {
+      userIds.forEach((userId) => {
+        const message = {
+          type: 'reject',
+          message: `사용자 ${userId}님의 현장 신청이 거절되었습니다.`,
+        };
+        console.log(`Sending WebSocket message to user:${userId}`, message); // 로그 추가
+        io.emit(`user:${userId}`, message);
+      });
+
+      await OnSite.destroy({
+        where: {
+          user_id: {
+            [Op.in]: userIds,
+          },
+        },
+      });
+
+      await User.destroy({
+        where: {
+          id: {
+            [Op.in]: userIds,
+          },
+        },
+      });
+
+      return res.send({ accept: false });
     }
 
     let totalHeadCount = 0;
@@ -317,8 +346,7 @@ exports.approveOnSite = async (req, res) => {
       io.emit(`user:${userId}`, message);
     });
 
-    // 응답 반환
-    res.status(200).json({ success: true });
+    res.send({ accept: true });
   } catch (err) {
     console.error('에러 발생:', err);
     res.status(500).json({
