@@ -190,7 +190,7 @@ exports.reservation = async (req, res) => {
     };
 
     await transaction.commit();
-    res.send({ success: true });
+    res.send({ success: true, userId: user.id });
   } catch (err) {
     await transaction.rollback();
     console.error(err);
@@ -256,7 +256,7 @@ exports.showOnSite = async (req, res) => {
 exports.approveOnSite = async (req, res) => {
   try {
     const { userIds, scheduleId, check } = req.body;
-    const io = req.app.get('io'); // ✅ app에서 io 가져오기
+    const io = req.app.get('io'); // app에서 io 가져오기
 
     if (!userIds || !Array.isArray(userIds) || !scheduleId || check == null) {
       return res.status(400).send({
