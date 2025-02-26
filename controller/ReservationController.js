@@ -180,7 +180,7 @@ exports.reservation = async (req, res) => {
     };
 
     await transaction.commit();
-    res.send({ success: true });
+    res.send({ success: true, userId: user.id });
   } catch (err) {
     await transaction.rollback();
     console.error(err);
