@@ -159,7 +159,7 @@ exports.showTicketing = async (req, res) => {
 exports.requestTicketing = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { id, timerId } = req.session.userInfo;
+    const { id, timerId, scheduleId } = req.session.userInfo;
 
     // 타이머가 설정되어 있으면 취소
     if (timerId) {
@@ -167,23 +167,13 @@ exports.requestTicketing = async (req, res) => {
       delete req.session.userInfo.timerId;
     }
 
-    // 좌석 정보 가져오기
-    const seats = await Seat.findAll({
-      attributes: ['row', 'number'],
-      where: { user_id: id },
-      transaction,
-    });
-
     // 좌석 상태 업데이트
     await Seat.update(
       { state: true },
       {
         where: {
           user_id: id,
-          [Op.or]: seats.map((seat) => ({
-            row: seat.row,
-            number: seat.number,
-          })),
+          schedule_id: scheduleId,
         },
         transaction,
       }
