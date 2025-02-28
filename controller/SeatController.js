@@ -26,13 +26,13 @@ exports.checkReserved = async (req, res) => {
     isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
   });
   try {
-    const { scheduleId, seats } = req.query; // seats는 { row, number } 형태의 객체 - 인코딩 필요
-    const { headCount, id: userId } = req.session.userInfo;
+    const { seats } = req.query; // seats는 { row, number } 형태의 객체 - 인코딩 필요
+    const { headCount, id: userId, scheduleId } = req.session.userInfo;
 
-    if (!scheduleId || !seats) {
+    if (!seats) {
       await transaction.rollback();
       return res.status(400).send({
-        error: '올바르지 않은 공연 일시 ID 또는 좌석 정보',
+        error: '올바르지 않은 좌석 정보',
       });
     }
 
@@ -56,7 +56,6 @@ exports.checkReserved = async (req, res) => {
 
     // 선택한 좌석 수와 예매 인원 대조
     if (parsedSeats.length !== parseInt(headCount)) {
-      // 강한 비교로 바꿔야 함
       await transaction.rollback();
       return res.status(400).send({
         error: '예매 인원과 선택한 좌석 수가 일치하지 않습니다',
@@ -158,7 +157,6 @@ exports.showTicketing = async (req, res) => {
 
 // 발권 신청
 exports.requestTicketing = async (req, res) => {
-  console.log(155);
   const transaction = await sequelize.transaction();
   try {
     const { id, timerId } = req.session.userInfo;
@@ -169,21 +167,12 @@ exports.requestTicketing = async (req, res) => {
       delete req.session.userInfo.timerId;
     }
 
-    // await Seat.update(
-    //     { state: true },
-    //     { where: { user_id: id } }
-    // );
-
-    console.log(171);
-
     // 좌석 정보 가져오기
     const seats = await Seat.findAll({
       attributes: ['row', 'number'],
       where: { user_id: id },
       transaction,
     });
-
-    console.log(180);
 
     // 좌석 상태 업데이트
     await Seat.update(
@@ -200,18 +189,13 @@ exports.requestTicketing = async (req, res) => {
       }
     );
 
-    console.log(197);
-
     await User.update({ state: true }, { where: { id: id }, transaction });
 
-    console.log(204);
-
-    await transaction.commit(); // 트랜잭션 커밋
+    await transaction.commit();
 
     res.send({ success: true });
   } catch (err) {
-    console.log(210);
-    await transaction.rollback(); // 트랜잭션 커밋
+    await transaction.rollback();
     console.error(err);
     res.status(500).send('Internal server error');
   }
