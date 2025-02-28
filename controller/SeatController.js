@@ -126,7 +126,7 @@ exports.checkReserved = async (req, res) => {
 // 발권 신청 화면
 exports.showTicketing = async (req, res) => {
   try {
-    const { id } = req.session.userInfo;
+    const { id, scheduleId } = req.session.userInfo;
 
     const seats = await Seat.findAll({
       attributes: ['row', 'number', 'schedule_id'],
@@ -139,7 +139,7 @@ exports.showTicketing = async (req, res) => {
 
     const play = await Schedule.findAll({
       attributes: ['date_time'],
-      where: { id: seats[0].schedule_id },
+      where: { id: scheduleId },
       include: {
         model: Play,
         attributes: ['title', 'poster'],
