@@ -134,6 +134,10 @@ exports.showTicketing = async (req, res) => {
       where: { user_id: id },
     });
 
+    if (!seats || seats.length === 0) {
+      return res.send({ play: null, seats: [] }); // 빈 결과 반환
+    }
+
     const play = await Schedule.findAll({
       attributes: ['date_time'],
       where: { id: seats[0].schedule_id },
