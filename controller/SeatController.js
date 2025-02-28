@@ -1,3 +1,4 @@
+const { raw } = require('mysql2');
 const { Seat, Schedule, Play, User, Count, sequelize } = require('../models');
 const { Op, Transaction } = require('sequelize');
 
@@ -197,8 +198,16 @@ exports.cancelTicketing = async (req, res) => {
     const { id } = req.session.userInfo;
 
     const user = await User.findOne({
+      attributes: ['state'],
       where: { id: id },
+      raw: true, // 단순 객체로 반환
     });
+
+    if (!user) {
+      return res.status(400).send({
+        error: '사용자를 찾을 수 없음.',
+      });
+    }
 
     if (user.state) {
       return res.status(400).send({
