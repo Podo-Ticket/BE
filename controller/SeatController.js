@@ -24,7 +24,7 @@ exports.showSeats = async (req, res) => {
 // 좌석 선택 - 이미 예약된 좌석이 있는지 확인
 exports.checkReserved = async (req, res) => {
   const transaction = await sequelize.transaction({
-    isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
+    isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ,
   });
   try {
     const { seats } = req.query; // seats는 { row, number } 형태의 객체 - 인코딩 필요
