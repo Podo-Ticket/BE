@@ -17,7 +17,7 @@ exports.index = async (req, res) => {
       include: [
         {
           model: Play,
-          attributes: ['title', 'poster'],
+          attributes: ['title', 'poster', 'location', 'running_time'],
           required: true,
         },
       ],
@@ -56,14 +56,10 @@ exports.index = async (req, res) => {
     await Count.increment('mainCnt', { where: { id: 1 } });
 
     res.send({
-      play: {
-        title: schedule.play.title,
-        poster: schedule.play.poster,
-      },
+      play: schedule.play,
       schedule: {
         id: schedule.id,
         date_time: schedule.date_time,
-        play_id: schedule.play_id,
       },
     });
   } catch (err) {
