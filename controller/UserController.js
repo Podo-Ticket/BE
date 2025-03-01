@@ -161,7 +161,7 @@ exports.showSchedule = async (req, res) => {
       ],
     });
 
-    res.send({ schedules: schedules });
+    res.send({ schedules });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');

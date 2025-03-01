@@ -1,5 +1,5 @@
 const { Seat, Schedule, User, OnSite, Count, sequelize } = require('../models');
-const { Op } = require('sequelize');
+const { Op, Transaction } = require('sequelize');
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -22,7 +22,16 @@ exports.showSchedule = async (req, res) => {
 
     // 임시
     const schedules = await Schedule.findAll({
-      attributes: ['id', 'date_time'],
+      attributes: [
+        'id',
+        'date_time',
+        [
+          sequelize.literal(
+            `available_seats - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id)`
+          ),
+          'free_seats',
+        ],
+      ],
       where: {
         play_id: playId,
         date_time: {
@@ -49,26 +58,7 @@ exports.showSchedule = async (req, res) => {
       ],
     });
 
-    const schedulePromiese = schedules.map(async (schedule) => {
-      const reservedSeats = await Seat.count({
-        where: {
-          schedule_id: schedule.id,
-        },
-      });
-
-      const seats = await Schedule.findOne({
-        where: {
-          id: schedule.id,
-        },
-      });
-
-      schedule.dataValues.available_seats =
-        seats.available_seats - reservedSeats;
-    });
-
-    await Promise.all(schedulePromiese);
-
-    res.send({ schedules: schedules });
+    res.send({ schedules });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
@@ -77,7 +67,9 @@ exports.showSchedule = async (req, res) => {
 
 // 현장 예매
 exports.reservation = async (req, res) => {
-  const transaction = await sequelize.transaction();
+  const transaction = await sequelize.transaction({
+    isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ,
+  });
   try {
     const { name, phoneNumber, headCount, scheduleId } = req.body;
 
@@ -92,6 +84,7 @@ exports.reservation = async (req, res) => {
       isNaN(headCount) ||
       parseInt(headCount) > 16
     ) {
+      await transaction.rollback();
       return res.status(400).send({
         error: '올바르지 않은 예약 정보',
       });
@@ -126,7 +119,7 @@ exports.reservation = async (req, res) => {
     // 좌석 가용성 체크
     if (
       scheduleInfo.available_seats <
-      scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount)
+      scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount, 10)
     ) {
       await transaction.rollback();
       return res.send({
@@ -135,14 +128,14 @@ exports.reservation = async (req, res) => {
       });
     }
 
-    // 중복 예약 체크 - FOR UPDATE 락을 사용하여 동시성 제어
+    // 중복 예약 체크 - 명시적 트랜잭션에서 행 락을 설정하여 동시성 제어
     const isExists = await User.findOne({
       where: {
         phone_number: phoneNumber,
         schedule_id: scheduleId,
       },
-      lock: transaction.LOCK.UPDATE, // 동시성 제어
       transaction,
+      lock: transaction.LOCK.UPDATE, // row-level lock 적용
     });
 
     if (isExists) {
@@ -230,7 +223,7 @@ exports.showOnSite = async (req, res) => {
       whereClause.approve = approve;
     }
 
-    const users = await OnSite.findAll({
+    const usersPromises = await OnSite.findAll({
       attributes: ['approve'],
       include: {
         model: User,
@@ -243,7 +236,22 @@ exports.showOnSite = async (req, res) => {
       },
     });
 
-    const approvalCnt = users.filter((user) => user.approve === true).length;
+    const approvalCntPromise = await OnSite.count({
+      where: {
+        approve: true,
+      },
+      include: [
+        {
+          model: User,
+          where: whereClause,
+        },
+      ],
+    });
+
+    const [users, approvalCnt] = await Promise.all([
+      usersPromises,
+      approvalCntPromise,
+    ]);
 
     res.send({ total: users.length, approvalCnt: approvalCnt, users: users });
   } catch (err) {
@@ -256,7 +264,7 @@ exports.showOnSite = async (req, res) => {
 exports.approveOnSite = async (req, res) => {
   try {
     const { userIds, scheduleId, check } = req.body;
-    const io = req.app.get('io'); // app에서 io 가져오기
+    const io = req.app.get('io');
 
     if (!userIds || !Array.isArray(userIds) || !scheduleId || check == null) {
       return res.status(400).send({
@@ -274,51 +282,53 @@ exports.approveOnSite = async (req, res) => {
         io.emit(`user:${userId}`, message);
       });
 
-      await OnSite.destroy({
-        where: {
-          user_id: {
-            [Op.in]: userIds,
-          },
-        },
-      });
-
-      await User.destroy({
-        where: {
-          id: {
-            [Op.in]: userIds,
-          },
-        },
-      });
+      await Promise.all([
+        OnSite.destroy({
+          where: { user_id: { [Op.in]: userIds } },
+        }),
+        User.destroy({
+          where: { id: { [Op.in]: userIds } },
+        }),
+      ]);
 
       return res.send({ accept: false });
     }
 
-    let totalHeadCount = 0;
+    // 사용자들의 head_count 합산
+    const users = await User.findAll({
+      where: {
+        id: { [Op.in]: userIds },
+      },
+      attributes: ['id', 'head_count'],
+    });
 
-    for (const userId of userIds) {
-      const user = await User.findOne({
-        where: {
-          id: userId,
-        },
+    if (users.length !== userIds.length) {
+      return res.send({
+        success: false,
+        error: '일부 사용자를 찾을 수 없습니다.',
       });
-
-      totalHeadCount += user.head_count;
     }
 
-    // 예약 가능 인원 확인
-    const reservedSeats = await Seat.count({
-      where: {
-        schedule_id: scheduleId,
-      },
-    });
+    const totalHeadCnt = users.reduce((sum, user) => sum + user.head_count, 0);
 
-    const seats = await Schedule.findOne({
-      where: {
-        id: scheduleId,
-      },
-    });
+    const [reservedSeats, schedule] = await Promise.all([
+      Seat.count({
+        where: { schedule_id: scheduleId },
+      }),
+      Schedule.findOne({
+        where: { id: scheduleId },
+        attributes: ['available_seats'],
+      }),
+    ]);
 
-    if (seats.available_seats < reservedSeats + totalHeadCount) {
+    if (!schedule) {
+      return res.send({
+        success: false,
+        error: '스케줄을 찾을 수 없습니다.',
+      });
+    }
+
+    if (schedule.available_seats < reservedSeats + totalHeadCnt) {
       return res.send({
         success: false,
         error: '예약 가능 인원을 초과하였습니다.',
@@ -326,33 +336,24 @@ exports.approveOnSite = async (req, res) => {
     }
 
     await OnSite.update(
-      {
-        approve: true,
-      },
-      {
-        where: {
-          user_id: userIds, // 일괄 업데이트
-        },
-      }
+      { approve: true },
+      { where: { user_id: { [Op.in]: userIds } } }
     );
 
-    // 5. WebSocket 실시간 알림 전송
+    // WebSocket 실시간 알림 전송
     userIds.forEach((userId) => {
       const message = {
         type: 'approval',
         message: `사용자 ${userId}님의 현장 신청이 승인되었습니다.`,
       };
-      console.log(`Sending WebSocket message to user:${userId}`, message); // 로그 추가
+      console.log(`Sending WebSocket message to user:${userId}`, message);
       io.emit(`user:${userId}`, message);
     });
 
     res.send({ accept: true });
   } catch (err) {
-    console.error('에러 발생:', err);
-    res.status(500).json({
-      success: false,
-      error: '서버 내부 오류',
-    });
+    console.error(err);
+    res.status(500).send('Internal server error');
   }
 };
 
@@ -367,17 +368,14 @@ exports.deleteOnSite = async (req, res) => {
       });
     }
 
-    await OnSite.destroy({
-      where: {
-        user_id: userIds,
-      },
-    });
-
-    await User.destroy({
-      where: {
-        id: userIds,
-      },
-    });
+    await Promise.all([
+      OnSite.destroy({
+        where: { user_id: { [Op.in]: userIds } },
+      }),
+      User.destroy({
+        where: { id: { [Op.in]: userIds } },
+      }),
+    ]);
 
     res.send({ success: true });
   } catch {
