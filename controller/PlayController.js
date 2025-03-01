@@ -5,7 +5,7 @@ const { Play, Schedule } = require('../models');
 // 공연 추가
 exports.postPlay = async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, location, runningTime } = req.body;
 
     if (!title) {
       return res.status(400).send({
@@ -18,6 +18,8 @@ exports.postPlay = async (req, res) => {
     await Play.create({
       title: title,
       poster: filePath,
+      location: location,
+      running_time: runningTime,
     });
 
     res.send({ success: true });

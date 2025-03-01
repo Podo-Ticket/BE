@@ -21,7 +21,7 @@ const Play = (sequelize) => {
         allowNull: false,
         comment: '공연 포스터',
       },
-      locaton: {
+      location: {
         type: DataTypes.STRING,
         allowNull: false,
         comment: '공연 장소',
