@@ -116,14 +116,6 @@ exports.showSchedule = async (req, res) => {
   try {
     const { play } = req.session.admin;
 
-    // const schedules = await Schedule.findAll({
-    //     attributes:['id', 'date_time'],
-    //     where: {
-    //         play_id: play
-    //     }
-    // });
-
-    // 임시
     const schedules = await Schedule.findAll({
       attributes: [
         'id',
@@ -137,29 +129,46 @@ exports.showSchedule = async (req, res) => {
       ],
       where: {
         play_id: play,
-        date_time: {
-          [Op.gt]: sequelize.fn(
-            'DATE_SUB',
-            sequelize.fn('NOW'),
-            sequelize.literal('INTERVAL 30 MINUTE')
-          ),
-        },
       },
-      order: [
-        [
-          sequelize.fn(
-            'ABS',
-            sequelize.fn(
-              'TIMESTAMPDIFF',
-              sequelize.literal('MINUTE'),
-              sequelize.fn('NOW'),
-              sequelize.col('date_time')
-            )
-          ),
-          'ASC',
-        ],
-      ],
     });
+
+    // 임시
+    // const schedules = await Schedule.findAll({
+    //   attributes: [
+    //     'id',
+    //     'date_time',
+    //     [
+    //       sequelize.literal(
+    //         `available_seats - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id)`
+    //       ),
+    //       'free_seats',
+    //     ],
+    //   ],
+    //   where: {
+    //     play_id: play,
+    //     date_time: {
+    //       [Op.gt]: sequelize.fn(
+    //         'DATE_SUB',
+    //         sequelize.fn('NOW'),
+    //         sequelize.literal('INTERVAL 30 MINUTE')
+    //       ),
+    //     },
+    //   },
+    //   order: [
+    //     [
+    //       sequelize.fn(
+    //         'ABS',
+    //         sequelize.fn(
+    //           'TIMESTAMPDIFF',
+    //           sequelize.literal('MINUTE'),
+    //           sequelize.fn('NOW'),
+    //           sequelize.col('date_time')
+    //         )
+    //       ),
+    //       'ASC',
+    //     ],
+    //   ],
+    // });
 
     res.send({ schedules });
   } catch (err) {

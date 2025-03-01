@@ -143,7 +143,7 @@ exports.showTicketing = async (req, res) => {
       where: { id: scheduleId },
       include: {
         model: Play,
-        attributes: ['title', 'poster'],
+        attributes: ['title', 'poster', 'location'],
       },
     });
 
