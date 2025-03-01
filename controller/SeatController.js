@@ -284,12 +284,19 @@ exports.showAudience = async (req, res) => {
       });
     }
 
-    const schedule = await Schedule.findOne({
-      where: {
-        play_id: play,
-        id: scheduleId,
-      },
-    });
+    const [schedule, seat] = await Promise.all([
+      Schedule.findOne({
+        where: {
+          play_id: play,
+          id: scheduleId,
+        },
+      }),
+      Seat.findOne({
+        where: {
+          id: seatId,
+        },
+      }),
+    ]);
 
     if (!schedule) {
       return res.status(400).send({
@@ -297,28 +304,29 @@ exports.showAudience = async (req, res) => {
       });
     }
 
-    const seat = await Seat.findOne({
-      where: {
-        id: seatId,
-      },
-    });
+    if (!seat) {
+      return res.status(400).send({
+        error: '해당 좌석 정보를 찾을 수 없습니다.',
+      });
+    }
 
-    const user = await User.findOne({
-      attributes: ['name', 'phone_number', 'head_count'],
-      where: {
-        id: seat.user_id,
-      },
-    });
+    const [user, seats] = await Promise.all([
+      User.findOne({
+        attributes: ['name', 'phone_number', 'head_count'],
+        where: {
+          id: seat.user_id,
+        },
+      }),
+      Seat.findAll({
+        attributes: ['row', 'number'],
+        where: {
+          schedule_id: scheduleId,
+          user_id: seat.user_id,
+        },
+      }),
+    ]);
 
-    const seats = await Seat.findAll({
-      attributes: ['row', 'number'],
-      where: {
-        schedule_id: scheduleId,
-        user_id: seat.user_id,
-      },
-    });
-
-    res.send({ user: user, seats: seats });
+    res.send({ user, seats });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
