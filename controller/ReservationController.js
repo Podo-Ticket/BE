@@ -1,5 +1,5 @@
 const { Seat, Schedule, User, OnSite, Count, sequelize } = require('../models');
-const { Op } = require('sequelize');
+const { Op, Transaction } = require('sequelize');
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -67,7 +67,9 @@ exports.showSchedule = async (req, res) => {
 
 // 현장 예매
 exports.reservation = async (req, res) => {
-  const transaction = await sequelize.transaction();
+  const transaction = await sequelize.transaction({
+    isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ,
+  });
   try {
     const { name, phoneNumber, headCount, scheduleId } = req.body;
 
@@ -82,6 +84,7 @@ exports.reservation = async (req, res) => {
       isNaN(headCount) ||
       parseInt(headCount) > 16
     ) {
+      await transaction.rollback();
       return res.status(400).send({
         error: '올바르지 않은 예약 정보',
       });
@@ -116,7 +119,7 @@ exports.reservation = async (req, res) => {
     // 좌석 가용성 체크
     if (
       scheduleInfo.available_seats <
-      scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount)
+      scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount, 10)
     ) {
       await transaction.rollback();
       return res.send({
@@ -125,14 +128,14 @@ exports.reservation = async (req, res) => {
       });
     }
 
-    // 중복 예약 체크 - FOR UPDATE 락을 사용하여 동시성 제어
+    // 중복 예약 체크 - 명시적 트랜잭션에서 행 락을 설정하여 동시성 제어
     const isExists = await User.findOne({
       where: {
         phone_number: phoneNumber,
         schedule_id: scheduleId,
       },
-      lock: transaction.LOCK.UPDATE, // 동시성 제어
       transaction,
+      lock: transaction.LOCK.UPDATE, // row-level lock 적용
     });
 
     if (isExists) {
