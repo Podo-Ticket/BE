@@ -239,12 +239,22 @@ exports.realTimeSeats = async (req, res) => {
       });
     }
 
-    const schedule = await Schedule.findOne({
-      where: {
-        play_id: play,
-        id: scheduleId,
-      },
-    });
+    const [schedule, seats] = await Promise.all([
+      await Schedule.findOne({
+        attributes: ['available_seats'],
+        where: {
+          play_id: play,
+          id: scheduleId,
+        },
+      }),
+      await Seat.findAll({
+        attributes: ['id', 'row', 'number', 'state', 'user_id', 'lock'],
+        where: {
+          schedule_id: scheduleId,
+          state: true,
+        },
+      }),
+    ]);
 
     if (!schedule) {
       return res.status(400).send({
@@ -252,18 +262,10 @@ exports.realTimeSeats = async (req, res) => {
       });
     }
 
-    const seats = await Seat.findAll({
-      attributes: ['id', 'row', 'number', 'state', 'user_id', 'lock'],
-      where: {
-        schedule_id: schedule.id,
-        state: true,
-      },
-    });
-
     // 여석
     const availableSeats = schedule.available_seats - seats.length;
 
-    res.send({ seats: seats, availableSeats: availableSeats });
+    res.send({ seats, availableSeats });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
