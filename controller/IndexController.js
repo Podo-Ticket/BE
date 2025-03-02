@@ -1,5 +1,4 @@
 const { Play, Schedule, Count, sequelize } = require('../models');
-const { Op } = require('sequelize');
 
 // main 화면
 exports.index = async (req, res) => {
@@ -12,39 +11,15 @@ exports.index = async (req, res) => {
       });
     }
 
-    const schedule = await Schedule.findOne({
-      attributes: ['id', 'date_time', 'play_id'],
+    const schedule = await Schedule.findAll({
+      attributes: ['id', 'date_time'],
       include: [
         {
           model: Play,
           attributes: ['title', 'poster', 'location', 'running_time'],
-          required: true,
         },
       ],
-      where: {
-        play_id: playId,
-        date_time: {
-          [Op.gt]: sequelize.fn(
-            'DATE_SUB',
-            sequelize.fn('NOW'),
-            sequelize.literal('INTERVAL 30 MINUTE')
-          ),
-        },
-      },
-      order: [
-        [
-          sequelize.fn(
-            'ABS',
-            sequelize.fn(
-              'TIMESTAMPDIFF',
-              sequelize.literal('MINUTE'),
-              sequelize.fn('NOW'),
-              sequelize.col('date_time')
-            )
-          ),
-          'ASC',
-        ],
-      ],
+      where: { play_id: playId },
     });
 
     if (!schedule) {
@@ -53,14 +28,16 @@ exports.index = async (req, res) => {
       });
     }
 
+    const scheduleList = schedule.map((sch) => ({
+      id: sch.id,
+      date_time: sch.date_time,
+    }));
+
     await Count.increment('mainCnt', { where: { id: 1 } });
 
     res.send({
-      play: schedule.play,
-      schedule: {
-        id: schedule.id,
-        date_time: schedule.date_time,
-      },
+      play: schedule[0].play,
+      schedule: scheduleList,
     });
   } catch (err) {
     console.error(err);
