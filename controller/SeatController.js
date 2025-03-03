@@ -433,7 +433,6 @@ exports.lockSeats = async (req, res) => {
       lock: true,
     }));
 
-    // 예약된 좌석과 스케줄 정보를 한 번의 쿼리로 조회
     const reservedSeats = await Seat.count({
       where: {
         [Op.or]: seatConditions,
