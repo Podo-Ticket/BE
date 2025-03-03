@@ -333,8 +333,8 @@ exports.showAudience = async (req, res) => {
   }
 };
 
-// 실시간 좌석 편집 - 좌석 잠그기
-exports.lockSeats = async (req, res) => {
+// 잠금 확인 팝업
+exports.checkSeats = async (req, res) => {
   try {
     const { scheduleId, seats } = req.body; // seats는 { row, number } 형태의 객체 - 인코딩 필요
 
@@ -391,6 +391,61 @@ exports.lockSeats = async (req, res) => {
       return res.send({ success: true, reservedList });
     }
 
+    res.send({ success: true, reservedLis: [] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal server error');
+  }
+};
+
+// 실시간 좌석 편집 - 좌석 잠그기
+exports.lockSeats = async (req, res) => {
+  try {
+    const { scheduleId, seats } = req.body; // seats는 { row, number } 형태의 객체 - 인코딩 필요
+
+    if (!scheduleId || !seats) {
+      return res.status(400).send({
+        error: '올바르지 않은 공연 일시 ID 또는 좌석 정보',
+      });
+    }
+
+    let parsedSeats;
+    try {
+      const decodedSeats = decodeURIComponent(seats); // URL 디코딩
+      parsedSeats = JSON.parse(decodedSeats); // 문자열을 배열로 변환
+    } catch (err) {
+      return res.status(400).send({
+        error: '좌석 정보 형식이 잘못되었습니다',
+      });
+    }
+
+    if (!Array.isArray(parsedSeats)) {
+      return res.status(400).send({
+        error: '좌석 정보는 배열이어야 합니다',
+      });
+    }
+
+    // 이미 잠금되어 있는 좌석인지 확인
+    const seatConditions = parsedSeats.map((seat) => ({
+      schedule_id: scheduleId,
+      row: seat.row,
+      number: seat.number,
+      lock: true,
+    }));
+
+    // 예약된 좌석과 스케줄 정보를 한 번의 쿼리로 조회
+    const reservedSeats = await Seat.count({
+      where: {
+        [Op.or]: seatConditions,
+      },
+    });
+
+    if (reservedSeats > 0)
+      return res.status(400).send({
+        success: false,
+        error: '이미 잠금된 좌석이 포함됨.',
+      });
+
     // 전체 잠금
     await Seat.bulkCreate(
       parsedSeats.map((seat) => ({
@@ -403,7 +458,7 @@ exports.lockSeats = async (req, res) => {
       }))
     );
 
-    res.send({ success: true, reservedList: [] });
+    res.send({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
