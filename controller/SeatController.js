@@ -400,6 +400,7 @@ exports.checkSeats = async (req, res) => {
 
 // 실시간 좌석 편집 - 좌석 잠그기
 exports.lockSeats = async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
     const { scheduleId, seats } = req.body; // seats는 { row, number } 형태의 객체 - 인코딩 필요
 
@@ -425,38 +426,81 @@ exports.lockSeats = async (req, res) => {
       });
     }
 
-    // 이미 잠금되어 있는 좌석인지 확인
-    const seatConditions = parsedSeats.map((seat) => ({
-      schedule_id: scheduleId,
-      row: seat.row,
-      number: seat.number,
-      lock: true,
-    }));
-
-    const reservedSeats = await Seat.count({
+    // 모든 scheduleId에 대해 한 번에 기존 좌석 조회
+    const existingSeats = await Seat.findAll({
       where: {
-        [Op.or]: seatConditions,
+        schedule_id: { [Op.in]: scheduleId },
+        [Op.or]: parsedSeats.map((seat) => ({
+          [Op.and]: [{ row: seat.row }, { number: seat.number }],
+        })),
       },
+      attributes: [
+        'id',
+        'schedule_id',
+        'row',
+        'number',
+        'state',
+        'lock',
+        'user_id',
+      ],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
     });
 
-    if (reservedSeats > 0)
-      return res.status(400).send({
-        success: false,
-        error: '이미 잠금된 좌석이 포함됨.',
-      });
-
-    // 전체 잠금
-    await Seat.bulkCreate(
-      parsedSeats.map((seat) => ({
-        schedule_id: scheduleId,
-        row: seat.row,
-        number: seat.number,
-        user_id: null,
-        state: true,
-        lock: true,
-      }))
+    // 기존 좌석을 Map으로 변환하여 빠른 검색이 가능하게 함
+    const existingSeatMap = new Map(
+      existingSeats.map((seat) => [
+        `${seat.schedule_id}-${seat.row}-${seat.number}`,
+        seat,
+      ])
     );
 
+    const seatsToCreate = [];
+    const seatsToLock = [];
+
+    for (const id of scheduleId) {
+      for (const seat of parsedSeats) {
+        const key = `${id}-${seat.row}-${seat.number}`;
+        const existingSeat = existingSeatMap.get(key);
+
+        if (!existingSeat) {
+          // 좌석이 존재하지 않으면 생성
+          seatsToCreate.push({
+            schedule_id: id,
+            row: seat.row,
+            number: seat.number,
+            state: 0,
+            lock: true,
+            user_id: null,
+          });
+        } else if (!existingSeat.lock && !existingSeat.user_id) {
+          // 좌석이 존재하고, 잠기지 않았으면 잠금 목록에 추가
+          seatsToLock.push(existingSeat.id);
+        }
+      }
+    }
+
+    // 새 좌석 생성
+    if (seatsToCreate.length > 0) {
+      await Seat.bulkCreate(seatsToCreate, { transaction });
+    }
+
+    // 기존 좌석 잠금 (이미 발권된 좌석 제외)
+    if (seatsToLock.length > 0) {
+      await Seat.update(
+        { lock: true },
+        {
+          where: {
+            id: { [Op.in]: seatsToLock },
+            user_id: null,
+            state: 0,
+          },
+          transaction,
+        }
+      );
+    }
+
+    await transaction.commit();
     res.send({ success: true });
   } catch (err) {
     console.error(err);
