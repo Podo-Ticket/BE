@@ -467,19 +467,42 @@ exports.lockSeats = async (req, res) => {
 // 실시간 좌석 편집 - 좌석 잠금 해제
 exports.unlockSeats = async (req, res) => {
   try {
-    const { scheduleId, seatIds } = req.body;
+    const { scheduleId, seats } = req.body; // seats는 { row, number } 형태의 객체 - 인코딩 필요
 
-    if (!scheduleId || !seatIds) {
+    if (!scheduleId || !seats) {
       return res.status(400).send({
-        error: '올바르지 않은 공연 일시 ID 또는 좌석 ID 정보',
+        success: false,
+        error: '올바르지 않은 공연 일시 ID 또는 좌석 정보',
       });
     }
 
-    // 전체 잠금
+    let parsedSeats;
+    try {
+      const decodedSeats = decodeURIComponent(seats); // URL 디코딩
+      parsedSeats = JSON.parse(decodedSeats); // 문자열을 배열로 변환
+    } catch (err) {
+      return res.status(400).send({
+        success: false,
+        error: '좌석 정보 형식이 잘못되었습니다',
+      });
+    }
+
+    if (!Array.isArray(parsedSeats)) {
+      return res.status(400).send({
+        success: false,
+        error: '좌석 정보는 배열이어야 합니다',
+      });
+    }
+
+    const seatConditions = parsedSeats.map((seat) => ({
+      row: seat.row,
+      number: seat.number,
+    }));
+
     await Seat.destroy({
       where: {
-        schedule_id: scheduleId,
-        id: seatIds,
+        schedule_id: scheduleId, // scheduleId가 배열일 경우 자동으로 IN 조건 처리됨
+        [Op.or]: seatConditions,
       },
     });
 
