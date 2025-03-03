@@ -425,26 +425,36 @@ exports.lockSeats = async (req, res) => {
       });
     }
 
-    // 이미 잠금되어 있는 좌석인지 확인
     const seatConditions = parsedSeats.map((seat) => ({
       schedule_id: scheduleId,
       row: seat.row,
       number: seat.number,
-      lock: true,
     }));
 
     // 예약된 좌석과 스케줄 정보를 한 번의 쿼리로 조회
-    const reservedSeats = await Seat.count({
+    const reservedSeats = await Seat.findAll({
       where: {
         [Op.or]: seatConditions,
       },
+      include: [
+        {
+          attributes: ['date_time'],
+          model: Schedule,
+          as: 'schedule',
+          required: true,
+        },
+      ],
     });
 
-    if (reservedSeats > 0)
-      return res.status(400).send({
-        success: false,
-        error: '이미 잠금된 좌석이 포함됨.',
-      });
+    if (parseInt(reservedSeats.length, 10) > 0) {
+      const reservedList = reservedSeats.map((seat) => ({
+        row: seat.row,
+        number: seat.number,
+        dateTime: seat.schedule.date_time,
+      }));
+
+      return res.send({ success: true, reservedList });
+    }
 
     // 전체 잠금
     await Seat.bulkCreate(
@@ -458,7 +468,7 @@ exports.lockSeats = async (req, res) => {
       }))
     );
 
-    res.send({ success: true });
+    res.send({ success: true, reservedList: [] });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
