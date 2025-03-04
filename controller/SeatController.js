@@ -469,7 +469,7 @@ exports.lockSeats = async (req, res) => {
             schedule_id: id,
             row: seat.row,
             number: seat.number,
-            state: 0,
+            state: 1,
             lock: true,
             user_id: null,
           });
