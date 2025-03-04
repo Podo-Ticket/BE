@@ -167,10 +167,10 @@ exports.reservation = async (req, res) => {
         { transaction }
       ),
 
-      Count.increment('reservationCnt', {
-        where: { id: 1 },
-        transaction,
-      }),
+      // Count.increment('reservationCnt', {
+      //   where: { id: 1 },
+      //   transaction,
+      // }),
     ]);
 
     // 현장 예약 정보 생성

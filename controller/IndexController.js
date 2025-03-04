@@ -33,7 +33,7 @@ exports.index = async (req, res) => {
       date_time: sch.date_time,
     }));
 
-    await Count.increment('mainCnt', { where: { id: 1 } });
+    // await Count.increment('mainCnt', { where: { id: 1 } });
 
     res.send({
       play: schedule[0].play,

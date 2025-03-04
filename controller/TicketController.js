@@ -23,7 +23,7 @@ exports.showTicketInfo = async (req, res) => {
       }),
     ]);
 
-    await Count.increment('infoCnt', { where: { id: 1 } });
+    // await Count.increment('infoCnt', { where: { id: 1 } });
 
     res.send({
       count: seats.length,
