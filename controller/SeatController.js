@@ -391,7 +391,7 @@ exports.checkSeats = async (req, res) => {
       return res.send({ success: true, reservedList });
     }
 
-    res.send({ success: true, reservedLis: [] });
+    res.send({ success: true, reservedList: [] });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
