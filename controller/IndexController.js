@@ -1,4 +1,4 @@
-const { Play, Schedule, Count, sequelize } = require('../models');
+const { Play, Schedule, Count } = require('../models');
 
 // main 화면
 exports.index = async (req, res) => {
