@@ -1,4 +1,4 @@
-const { User, Schedule, sequelize } = require('../models');
+const { User, Schedule, sequelize, OnSite } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 
 // user
@@ -18,12 +18,26 @@ exports.checkReservation = async (req, res) => {
         phone_number: phoneNumber,
         schedule_id: scheduleId,
       },
+      include: {
+        model: OnSite,
+        as: 'OnSite',
+        attributes: ['approve'],
+      },
     });
 
     if (!user) {
       return res.send({
         success: false,
         data: '예매 내역 확인 불가',
+      });
+    }
+
+    const approveValue = user.OnSite ? user.OnSite.approve : null;
+
+    if (approveValue === false) {
+      return res.send({
+        success: false,
+        data: '현장 예매 수락 대기 중',
       });
     }
 
