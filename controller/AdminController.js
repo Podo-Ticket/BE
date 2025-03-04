@@ -1,5 +1,4 @@
 const { Schedule, User, Seat, sequelize } = require('../models');
-const { Op } = require('sequelize');
 
 // 접속
 exports.enterAdmin = async (req, res) => {
