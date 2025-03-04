@@ -1,4 +1,4 @@
-const { Schedule, sequelize } = require('../models');
+const { Schedule, User, Seat, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 // 접속
@@ -31,27 +31,42 @@ exports.enterAdmin = async (req, res) => {
 exports.showMain = async (req, res) => {
   try {
     const { play } = req.session.admin;
-    console.log('play', play);
 
-    const info = await Schedule.findOne({
+    const info = await Schedule.findAll({
       attributes: [
         'id',
         'date_time',
-        'available_seats',
         [
-          sequelize.literal(
-            `available_seats - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id)`
+          sequelize.fn(
+            'COUNT',
+            sequelize.fn('DISTINCT', sequelize.col('users.id'))
           ),
-          'free_seats',
+          'user',
+        ],
+        [
+          sequelize.fn(
+            'COUNT',
+            sequelize.fn('DISTINCT', sequelize.col('seats.id'))
+          ),
+          'booked',
         ],
       ],
-      where: {
-        play_id: play,
-        date_time: {
-          [Op.gt]: sequelize.fn('NOW'),
+      include: [
+        {
+          model: User,
+          as: 'users',
+          attributes: [],
         },
-      },
-      order: [['date_time', 'ASC']],
+        {
+          model: Seat,
+          as: 'seats',
+          attributes: [],
+          where: { state: 1 },
+          required: false,
+        },
+      ],
+      where: { play_id: play },
+      group: ['Schedule.id'],
     });
 
     res.send({ info });
