@@ -1,4 +1,3 @@
-const { raw } = require('mysql2');
 const { Seat, Schedule, Play, User, Count, sequelize } = require('../models');
 const { Op, Transaction } = require('sequelize');
 
@@ -56,10 +55,25 @@ exports.checkReserved = async (req, res) => {
     }
 
     // 선택한 좌석 수와 예매 인원 대조
-    if (parsedSeats.length !== parseInt(headCount)) {
+    if (parsedSeats.length !== parseInt(headCount, 10)) {
       await transaction.rollback();
       return res.status(400).send({
         error: '예매 인원과 선택한 좌석 수가 일치하지 않습니다',
+      });
+    }
+
+    // DB에 있는 좌석 수와 예매 인원 대조
+    const seatCount = await Seat.count({
+      where: {
+        schedule_id: scheduleId,
+        user_id: userId,
+      },
+    });
+
+    if (seatCount > parseInt(headCount, 10)) {
+      await transaction.rollback();
+      return res.status(400).send({
+        error: '예매 인원을 초과했습니다',
       });
     }
 
