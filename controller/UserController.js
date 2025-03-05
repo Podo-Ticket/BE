@@ -155,10 +155,13 @@ exports.showSchedule = async (req, res) => {
       SELECT 
         s.id, 
         s.date_time,
-        s.available_seats 
-          - COALESCE(r1.sum_head_count, 0)
-          - COALESCE(r2.sum_head_count, 0)
-          - COALESCE(r3.locked_seat_count, 0) AS free_seats
+        GREATEST(
+          s.available_seats 
+            - COALESCE(r1.sum_head_count, 0)
+            - COALESCE(r2.sum_head_count, 0)
+            - COALESCE(r3.locked_seat_count, 0),
+          0
+        ) AS free_seats
       FROM schedule s
       LEFT JOIN (
         SELECT u.schedule_id, SUM(u.head_count) AS sum_head_count
