@@ -60,7 +60,7 @@ exports.showMain = async (req, res) => {
           model: Seat,
           as: 'seats',
           attributes: [],
-          where: { state: 1 },
+          where: { state: true, lock: false },
           required: false,
         },
       ],
