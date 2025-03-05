@@ -104,7 +104,6 @@ exports.reservation = async (req, res) => {
       where: { id: scheduleId },
       attributes: [
         'id',
-        // 'available_seats',
         [
           sequelize.literal(
             `available_seats - COALESCE((SELECT SUM(head_count) FROM user WHERE user.schedule_id = schedule.id), 0) - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id AND seat.lock = 1)`
