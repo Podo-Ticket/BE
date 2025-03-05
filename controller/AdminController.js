@@ -36,16 +36,23 @@ exports.showMain = async (req, res) => {
         'id',
         'date_time',
         [
-          sequelize.fn(
-            'COUNT',
-            sequelize.fn('DISTINCT', sequelize.col('users.id'))
+          sequelize.cast(
+            sequelize.fn(
+              'COALESCE',
+              sequelize.fn('SUM', sequelize.col('users.head_count')),
+              0
+            ),
+            'UNSIGNED'
           ),
           'user',
         ],
         [
-          sequelize.fn(
-            'COUNT',
-            sequelize.fn('DISTINCT', sequelize.col('seats.id'))
+          sequelize.cast(
+            sequelize.fn(
+              'COUNT',
+              sequelize.fn('DISTINCT', sequelize.col('seats.id'))
+            ),
+            'UNSIGNED'
           ),
           'booked',
         ],
