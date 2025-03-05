@@ -136,7 +136,7 @@ exports.showSchedule = async (req, res) => {
         'date_time',
         [
           sequelize.literal(
-            `available_seats - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id)`
+            `available_seats - COALESCE((SELECT SUM(head_count) FROM user WHERE user.schedule_id = schedule.id), 0) - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id AND seat.lock = 1)`
           ),
           'free_seats',
         ],
