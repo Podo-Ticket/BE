@@ -36,6 +36,8 @@ exports.showSchedule = async (req, res) => {
     const schedules = await sequelize.query(
       `
       SELECT 
+        s.id, 
+        s.date_time,
         GREATEST(
           s.available_seats 
             - COALESCE(r1.sum_head_count, 0)
