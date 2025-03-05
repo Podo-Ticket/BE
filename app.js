@@ -8,6 +8,7 @@ const { sequelize } = require('./models');
 const { swaggerUi, specs } = require('./swagger/swagger');
 const http = require('http');
 const { Server } = require('socket.io');
+const logger = require('./utils/logger');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -30,6 +31,12 @@ const redisClient = createClient({
 redisClient.connect().catch(console.error);
 
 const RedisStore = require('connect-redis').default;
+app.use((req, res, next) => {
+  logger.info(`[${req.method}] ${req.url}`);
+  logger.info(`Headers: ${JSON.stringify(req.headers)}`);
+  logger.info(`Body: ${JSON.stringify(req.body)}`);
+  next();
+});
 
 // 세션 설정
 app.use(
