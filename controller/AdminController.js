@@ -74,3 +74,17 @@ exports.showMain = async (req, res) => {
     res.status(500).send('Internal server error');
   }
 };
+
+// 세션 확인
+exports.checkSession = async (req, res) => {
+  try {
+    if (req.session.admin) {
+      res.send({ session: true });
+    } else {
+      res.send({ session: false });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal server error');
+  }
+};
