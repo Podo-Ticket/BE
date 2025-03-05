@@ -104,7 +104,13 @@ exports.reservation = async (req, res) => {
       where: { id: scheduleId },
       attributes: [
         'id',
-        'available_seats',
+        // 'available_seats',
+        [
+          sequelize.literal(
+            `available_seats - COALESCE((SELECT SUM(head_count) FROM user WHERE user.schedule_id = schedule.id), 0) - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id AND seat.lock = 1)`
+          ),
+          'available_seats',
+        ],
         [
           sequelize.literal(`(
                     SELECT COUNT(*) 
@@ -127,7 +133,7 @@ exports.reservation = async (req, res) => {
 
     // 좌석 가용성 체크
     if (
-      scheduleInfo.available_seats <
+      scheduleInfo.getDataValue('available_seats') <
       scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount, 10)
     ) {
       await transaction.rollback();
