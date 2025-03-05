@@ -38,8 +38,8 @@ exports.showMain = async (req, res) => {
         [
           sequelize.literal(`(
             SELECT COALESCE(SUM(u.head_count), 0)
-            FROM USER u
-            WHERE u.schedule_id = Schedule.id
+            FROM user u
+            WHERE u.schedule_id = schedule.id
           )`),
           'user',
         ],
@@ -69,7 +69,7 @@ exports.showMain = async (req, res) => {
         },
       ],
       where: { play_id: play },
-      group: ['Schedule.id'],
+      group: ['schedule.id'],
     });
 
     res.send({ info });
