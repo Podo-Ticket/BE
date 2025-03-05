@@ -193,7 +193,7 @@ exports.requestTicketing = async (req, res) => {
       }
     );
 
-    if (updatedSeatCount !== headCount) {
+    if (parseInt(updatedSeatCount, 10) !== parseInt(headCount, 10)) {
       await transaction.rollback();
       return res.status(400).send({
         success: false,
