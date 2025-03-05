@@ -36,14 +36,11 @@ exports.showMain = async (req, res) => {
         'id',
         'date_time',
         [
-          sequelize.cast(
-            sequelize.fn(
-              'COALESCE',
-              sequelize.fn('SUM', sequelize.col('users.head_count')),
-              0
-            ),
-            'UNSIGNED'
-          ),
+          sequelize.literal(`(
+            SELECT COALESCE(SUM(u.head_count), 0)
+            FROM USER u
+            WHERE u.schedule_id = Schedule.id
+          )`),
           'user',
         ],
         [
