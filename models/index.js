@@ -60,11 +60,11 @@ User.hasOne(Survey, { foreignKey: 'user_id', sourceKey: 'id' });
 Survey.belongsTo(User, { foreignKey: 'user_id', targetKey: 'id' });
 
 // User : OnSite = 1 : 1
-User.hasOne(OnSite, { foreignKey: 'user_id', sourceKey: 'id', as: 'OnSite' });
+User.hasOne(OnSite, { foreignKey: 'user_id', sourceKey: 'id', as: 'on_site' });
 OnSite.belongsTo(User, {
   foreignKey: 'user_id',
   targetKey: 'id',
-  as: 'OnSite',
+  as: 'user',
 });
 
 // 모델 DB 객체에 저장

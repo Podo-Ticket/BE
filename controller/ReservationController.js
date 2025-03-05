@@ -236,6 +236,7 @@ exports.showOnSite = async (req, res) => {
       attributes: ['approve'],
       include: {
         model: User,
+        as: 'user',
         attributes: ['id', 'name', 'phone_number', 'head_count'],
         where: whereClause,
         order: [
@@ -252,6 +253,7 @@ exports.showOnSite = async (req, res) => {
       include: [
         {
           model: User,
+          as: 'user',
           where: whereClause,
         },
       ],

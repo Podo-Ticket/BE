@@ -20,7 +20,7 @@ exports.checkReservation = async (req, res) => {
       },
       include: {
         model: OnSite,
-        as: 'OnSite',
+        as: 'on_site',
         attributes: ['approve'],
       },
     });
