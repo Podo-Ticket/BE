@@ -246,7 +246,7 @@ exports.reservationAdmin = async (req, res) => {
 
     // 좌석 가용성 체크
     if (
-      scheduleInfo.getDataValue('available_seats') <
+      parseInt(scheduleInfo.getDataValue('available_seats'), 10) <
       scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount)
     ) {
       await transaction.rollback();
