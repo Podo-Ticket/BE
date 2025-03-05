@@ -130,60 +130,63 @@ exports.showSchedule = async (req, res) => {
   try {
     const { play } = req.session.admin;
 
-    const schedules = await Schedule.findAll({
-      attributes: [
-        'id',
-        'date_time',
-        [
-          sequelize.literal(
-            `available_seats - COALESCE((SELECT SUM(head_count) FROM user WHERE user.schedule_id = schedule.id), 0) - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id AND seat.lock = 1)`
-          ),
-          'free_seats',
-        ],
-      ],
-      where: {
-        play_id: play,
-      },
-    });
-
-    // 임시
+    // 간단 버전
     // const schedules = await Schedule.findAll({
     //   attributes: [
     //     'id',
     //     'date_time',
     //     [
     //       sequelize.literal(
-    //         `available_seats - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id)`
+    //         `available_seats -
+    //         COALESCE((SELECT SUM(u.head_count) FROM user u LEFT JOIN on_site o ON u.id = o.user_id WHERE u.schedule_id = schedule.id AND o.user_id IS NULL), 0) -
+    //         COALESCE((SELECT SUM(u.head_count) FROM user u JOIN on_site o ON u.id = o.user_id WHERE u.schedule_id = schedule.id AND o.approve = 1), 0) -
+    //         (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id AND seat.lock = 1)`
     //       ),
     //       'free_seats',
     //     ],
     //   ],
     //   where: {
     //     play_id: play,
-    //     date_time: {
-    //       [Op.gt]: sequelize.fn(
-    //         'DATE_SUB',
-    //         sequelize.fn('NOW'),
-    //         sequelize.literal('INTERVAL 30 MINUTE')
-    //       ),
-    //     },
     //   },
-    //   order: [
-    //     [
-    //       sequelize.fn(
-    //         'ABS',
-    //         sequelize.fn(
-    //           'TIMESTAMPDIFF',
-    //           sequelize.literal('MINUTE'),
-    //           sequelize.fn('NOW'),
-    //           sequelize.col('date_time')
-    //         )
-    //       ),
-    //       'ASC',
-    //     ],
-    //   ],
     // });
 
+    const schedules = await sequelize.query(
+      `
+      SELECT 
+        s.id, 
+        s.date_time,
+        s.available_seats 
+          - COALESCE(r1.sum_head_count, 0)
+          - COALESCE(r2.sum_head_count, 0)
+          - COALESCE(r3.locked_seat_count, 0) AS free_seats
+      FROM schedule s
+      LEFT JOIN (
+        SELECT u.schedule_id, SUM(u.head_count) AS sum_head_count
+        FROM user u
+        LEFT JOIN on_site o ON u.id = o.user_id
+        WHERE o.user_id IS NULL
+        GROUP BY u.schedule_id
+      ) r1 ON s.id = r1.schedule_id
+      LEFT JOIN (
+        SELECT u.schedule_id, SUM(u.head_count) AS sum_head_count
+        FROM user u
+        JOIN on_site o ON u.id = o.user_id
+        WHERE o.approve = 1
+        GROUP BY u.schedule_id
+      ) r2 ON s.id = r2.schedule_id
+      LEFT JOIN (
+        SELECT schedule_id, COUNT(*) AS locked_seat_count
+        FROM seat
+        WHERE \`lock\` = 1
+        GROUP BY schedule_id
+      ) r3 ON s.id = r3.schedule_id
+      WHERE s.play_id = :playId
+      `,
+      {
+        replacements: { playId: play },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
     res.send({ schedules });
   } catch (err) {
     console.error(err);
@@ -214,23 +217,19 @@ exports.reservationAdmin = async (req, res) => {
     }
 
     // 한 번의 쿼리로 예약 가능 인원 확인
+    // 간단 버전
     const scheduleInfo = await Schedule.findOne({
       where: { id: scheduleId },
       attributes: [
         'id',
         [
           sequelize.literal(
-            `available_seats - COALESCE((SELECT SUM(head_count) FROM user WHERE user.schedule_id = schedule.id), 0) - (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id AND seat.lock = 1)`
+            `available_seats -
+            COALESCE((SELECT SUM(u.head_count) FROM user u LEFT JOIN on_site o ON u.id = o.user_id WHERE u.schedule_id = schedule.id AND o.user_id IS NULL), 0) -
+            COALESCE((SELECT SUM(u.head_count) FROM user u JOIN on_site o ON u.id = o.user_id WHERE u.schedule_id = schedule.id AND o.approve = 1), 0) -
+            (SELECT COUNT(*) FROM seat WHERE seat.schedule_id = schedule.id AND seat.lock = 1)`
           ),
           'available_seats',
-        ],
-        [
-          sequelize.literal(`(
-                    SELECT COUNT(*) 
-                    FROM seat 
-                    WHERE schedule_id = ${scheduleId}
-                )`),
-          'reserved_seats',
         ],
       ],
       transaction,
@@ -247,7 +246,7 @@ exports.reservationAdmin = async (req, res) => {
     // 좌석 가용성 체크
     if (
       parseInt(scheduleInfo.getDataValue('available_seats'), 10) <
-      scheduleInfo.getDataValue('reserved_seats') + parseInt(headCount)
+      parseInt(headCount)
     ) {
       await transaction.rollback();
       return res.send({
