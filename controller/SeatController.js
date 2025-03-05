@@ -174,7 +174,7 @@ exports.showTicketing = async (req, res) => {
 exports.requestTicketing = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { id, timerId, scheduleId } = req.session.userInfo;
+    const { id, timerId, scheduleId, headCount } = req.session.userInfo;
 
     // 타이머가 설정되어 있으면 취소
     if (timerId) {
@@ -182,8 +182,7 @@ exports.requestTicketing = async (req, res) => {
       delete req.session.userInfo.timerId;
     }
 
-    // 좌석 상태 업데이트
-    await Seat.update(
+    const updatedSeatCount = await Seat.update(
       { state: true },
       {
         where: {
@@ -194,10 +193,17 @@ exports.requestTicketing = async (req, res) => {
       }
     );
 
+    if (updatedSeatCount !== headCount) {
+      await transaction.rollback();
+      return res.status(400).send({
+        success: false,
+        error: '예매 인원과 선택한 좌석 수가 일치하지 않습니다',
+      });
+    }
+
     await User.update({ state: true }, { where: { id: id }, transaction });
 
     await transaction.commit();
-
     res.send({ success: true });
   } catch (err) {
     await transaction.rollback();
