@@ -1,11 +1,11 @@
-const { Seat, Schedule, Play, Count, Survey } = require('../models');
+const { Seat, Schedule, Play, Count, Survey, OnSite } = require('../models');
 
 // 티켓 정보
 exports.showTicketInfo = async (req, res) => {
   try {
     const { id } = req.session.userInfo;
 
-    const [seats, isSurvey] = await Promise.all([
+    const [seats, isOnSite, isSurvey] = await Promise.all([
       Seat.findAll({
         attributes: ['row', 'number'],
         where: { user_id: id },
@@ -18,6 +18,9 @@ exports.showTicketInfo = async (req, res) => {
           },
         },
       }),
+      OnSite.findOne({
+        where: { user_id: id },
+      }),
       Survey.findOne({
         where: { user_id: id },
       }),
@@ -27,6 +30,7 @@ exports.showTicketInfo = async (req, res) => {
 
     res.send({
       count: seats.length,
+      onSite: Boolean(isOnSite),
       seats: seats,
       isSurvey: Boolean(isSurvey),
     });
