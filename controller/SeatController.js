@@ -420,7 +420,6 @@ exports.checkSeats = async (req, res) => {
 
 // 실시간 좌석 편집 - 좌석 잠그기
 exports.lockSeats = async (req, res) => {
-  const transaction = await sequelize.transaction();
   try {
     const { scheduleId, seats } = req.body; // seats는 { row, number } 형태의 객체 - 인코딩 필요
 
@@ -446,6 +445,10 @@ exports.lockSeats = async (req, res) => {
       });
     }
 
+    const transaction = await sequelize.transaction({
+      isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED,
+    });
+
     // 모든 scheduleId에 대해 한 번에 기존 좌석 조회
     const existingSeats = await Seat.findAll({
       where: {
@@ -464,7 +467,6 @@ exports.lockSeats = async (req, res) => {
         'user_id',
       ],
       transaction,
-      lock: transaction.LOCK.UPDATE,
     });
 
     // 기존 좌석을 Map으로 변환하여 빠른 검색이 가능하게 함
@@ -500,9 +502,13 @@ exports.lockSeats = async (req, res) => {
       }
     }
 
-    // 새 좌석 생성
+    // 새 좌석 생성 -  배치 처리
     if (seatsToCreate.length > 0) {
-      await Seat.bulkCreate(seatsToCreate, { transaction });
+      const batchSize = 10;
+      for (let i = 0; i < seatsToCreate.length; i += batchSize) {
+        const batch = seatsToCreate.slice(i, i + batchSize);
+        await Seat.bulkCreate(batch, { transaction });
+      }
     }
 
     // 기존 좌석 잠금 (이미 발권된 좌석 제외)
