@@ -1,11 +1,12 @@
 const { User, Schedule, sequelize, OnSite } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 
+const userSocketMap = new Map();
 // user
 // 예약 확인
 exports.checkReservation = async (req, res) => {
   try {
-    const { phoneNumber, scheduleId } = req.query;
+    const { phoneNumber, scheduleId, socketId } = req.query;
 
     if (!phoneNumber || !scheduleId) {
       return res.status(400).send({
@@ -40,6 +41,21 @@ exports.checkReservation = async (req, res) => {
         data: '현장 예매 수락 대기 중',
       });
     }
+
+    //중복 로그인 확인
+    const io = req.app.get('io');
+    const userId = user.id;
+    const prevSocketId = userSocketMap.get(userId);
+
+    if (prevSocketId && prevSocketId !== socketId) {
+      const prevSocket = io.sockets.sockets.get(prevSocketId);
+      if (prevSocket) {
+        prevSocket.emit('forceLogout', {
+          message: '다른 기기에서 좌석을 선택하여 메인화면으로 이동합니다.',
+        });
+      }
+    }
+    userSocketMap.set(userId, socketId);
 
     const sessionInfo = {
       id: user.id,
