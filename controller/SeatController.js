@@ -70,7 +70,7 @@ exports.checkReserved = async (req, res) => {
       },
     });
 
-    if (seatCount > parseInt(headCount, 10)) {
+    if (seatCount >= parseInt(headCount, 10)) {
       await transaction.rollback();
       return res.status(400).send({
         error: '예매 인원을 초과했습니다',
