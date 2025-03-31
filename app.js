@@ -97,7 +97,7 @@ app.get('*', (req, res) => {
 let server;
 
 /// 서버 실행
-sequelize.sync({ force: false }).then(() => {
+sequelize.sync({ force: true }).then(() => {
   // HTTP 서버 생성
   server = http.createServer(app);
 
