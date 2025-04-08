@@ -174,7 +174,8 @@ exports.showTicketing = async (req, res) => {
 exports.requestTicketing = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { id, timerId, scheduleId, headCount } = req.session.userInfo;
+    const { id, timerId, scheduleId, headCount, phoneNumber } =
+      req.session.userInfo;
 
     // 타이머가 설정되어 있으면 취소
     if (timerId) {
@@ -204,7 +205,23 @@ exports.requestTicketing = async (req, res) => {
     await User.update({ state: true }, { where: { id: id }, transaction });
 
     await transaction.commit();
-    res.send({ success: true });
+
+    //문자보내기
+    try {
+      const { sendSMS } = require('../utils/SmsSender');
+      await sendSMS({
+        ///////////////해당 부분 phoneNumber로 교체/////////////
+
+        to: '01023086047',
+
+        ///////////////////////////////////////////////////////
+        text: '[포도티켓] 발권이 완료되었습니다. 공연장에서 티켓을 수령해 주세요.',
+      });
+    } catch (smsError) {
+      console.error('📵 문자 전송 실패:', smsError.message);
+    }
+
+    return res.send({ success: true });
   } catch (err) {
     await transaction.rollback();
     console.error(err);
