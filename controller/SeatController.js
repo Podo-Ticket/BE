@@ -206,16 +206,16 @@ exports.requestTicketing = async (req, res) => {
 
     await transaction.commit();
 
-    //문자보내기
-    try {
-      const { sendSMS } = require('../utils/SmsSender');
-      await sendSMS({
-        to: phoneNumber,
-        text: '[포도티켓] 발권이 완료되었습니다. 공연장에서 티켓을 수령해 주세요.',
-      });
-    } catch (smsError) {
-      console.error('문자 전송 실패:', smsError.message);
-    }
+    // 문자 메시지 돈 나가므로 주석 처리
+    // try {
+    //   const { sendSMS } = require('../utils/SmsSender');
+    //   await sendSMS({
+    //     to: phoneNumber,
+    //     text: '[포도티켓] 발권이 완료되었습니다. 공연장에서 티켓을 수령해 주세요.',
+    //   });
+    // } catch (smsError) {
+    //   console.error('문자 전송 실패:', smsError.message);
+    // }
 
     return res.send({ success: true });
   } catch (err) {

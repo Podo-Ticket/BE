@@ -13,10 +13,10 @@ exports.sendSMS = async ({ to, text }) => {
       from: process.env.COOLSMS_SENDER_NUMBER,
       text,
     });
-    console.log('✅ 문자 발송 완료:', response);
+    console.log('문자 발송 완료:', response);
     return response;
   } catch (error) {
-    console.error('❌ 문자 발송 실패:', error.message);
+    console.error('문자 발송 실패:', error.message);
     throw new Error('SMS 발송 실패');
   }
 };
