@@ -1,4 +1,4 @@
-const { User, Schedule, sequelize, OnSite } = require('../models');
+const { User, Schedule, sequelize, OnSite, Seat } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 
 const userSocketMap = new Map();
@@ -51,13 +51,11 @@ exports.checkReservation = async (req, res) => {
     const sessionId = req.sessionID;
     const prevSessionSocketId = sessionSocketMap.get(sessionId);
 
-    console.log(sessionSocketMap);
-    console.log(prevSessionSocketId);
     if (prevSessionSocketId && prevSessionSocketId !== socketId) {
       const prevSocket = io.sockets.sockets.get(prevSessionSocketId);
       if (prevSocket) {
         prevSocket.emit('forceLogout', {
-          message: '이전 로그인 정보가 종료되었습니다.',
+          message: '동시 접속이 확인되었습니다.',
         });
       }
       sessionSocketMap.delete(sessionId);
@@ -77,6 +75,13 @@ exports.checkReservation = async (req, res) => {
     sessionSocketMap.set(sessionId, socketId);
     userSocketMap.set(userId, socketId);
 
+    const seats = await Seat.findAll({
+      where: {
+        schedule_id: user.scheduleId,
+        user_id: user.id,
+      },
+    });
+
     const sessionInfo = {
       id: user.id,
       phoneNumber: user.phone_number,
@@ -87,11 +92,21 @@ exports.checkReservation = async (req, res) => {
 
     req.session.userInfo = sessionInfo;
 
-    return res.send(
-      user.state
-        ? { user: sessionInfo, data: '이미 발권한 사용자' }
-        : { success: true }
-    );
+    if (user.state) {
+      return res.send({
+        user: sessionInfo,
+        data: '이미 발권한 사용자',
+      });
+    }
+
+    if (seats && seats.length > 0) {
+      return res.send({
+        user: sessionInfo,
+        data: '이미 좌석을 선택한 사용자',
+      });
+    }
+
+    return res.send({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
