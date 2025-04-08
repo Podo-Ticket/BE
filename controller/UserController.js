@@ -1,7 +1,8 @@
-const { User, Schedule, sequelize, OnSite } = require('../models');
+const { User, Schedule, sequelize, OnSite, Seat } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 
 const userSocketMap = new Map();
+const sessionSocketMap = new Map();
 // user
 // 예약 확인
 exports.checkReservation = async (req, res) => {
@@ -42,20 +43,43 @@ exports.checkReservation = async (req, res) => {
       });
     }
 
-    //중복 로그인 확인
+    // 중복 로그인 확인 및 동일 브라우저 동시 로그인
     const io = req.app.get('io');
     const userId = user.id;
-    const prevSocketId = userSocketMap.get(userId);
+    const sessionId = req.sessionID;
 
-    if (prevSocketId && prevSocketId !== socketId) {
-      const prevSocket = io.sockets.sockets.get(prevSocketId);
-      if (prevSocket) {
-        prevSocket.emit('forceLogout', {
-          message: '다른 기기에서 좌석을 선택하여 메인화면으로 이동합니다.',
+    // 공통 로그아웃 처리 함수
+    const forceLogoutBySocketId = (socketId) => {
+      const socket = io.sockets.sockets.get(socketId);
+      if (socket) {
+        socket.emit('forceLogout', {
+          message: '동시 접속이 확인되었습니다.',
         });
       }
+    };
+
+    // 1. 동일 브라우저 세션 중복 로그인
+    const prevSessionSocketId = sessionSocketMap.get(sessionId);
+    if (prevSessionSocketId && prevSessionSocketId !== socketId) {
+      forceLogoutBySocketId(prevSessionSocketId);
+      sessionSocketMap.delete(sessionId);
     }
+
+    // 2. 동일 유저 중복 로그인
+    const prevSocketId = userSocketMap.get(userId);
+    if (prevSocketId && prevSocketId !== socketId) {
+      forceLogoutBySocketId(prevSocketId);
+    }
+
+    sessionSocketMap.set(sessionId, socketId);
     userSocketMap.set(userId, socketId);
+
+    const seats = await Seat.findAll({
+      where: {
+        schedule_id: user.schedule_id,
+        user_id: user.id,
+      },
+    });
 
     const sessionInfo = {
       id: user.id,
@@ -67,11 +91,21 @@ exports.checkReservation = async (req, res) => {
 
     req.session.userInfo = sessionInfo;
 
-    return res.send(
-      user.state
-        ? { user: sessionInfo, data: '이미 발권한 사용자' }
-        : { success: true }
-    );
+    if (user.state) {
+      return res.send({
+        user: sessionInfo,
+        data: '이미 발권한 사용자',
+      });
+    }
+
+    if (seats && seats.length > 0) {
+      return res.send({
+        user: sessionInfo,
+        data: '이미 좌석을 선택한 사용자',
+      });
+    }
+
+    return res.send({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
