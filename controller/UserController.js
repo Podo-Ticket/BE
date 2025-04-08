@@ -2,6 +2,7 @@ const { User, Schedule, sequelize, OnSite } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 
 const userSocketMap = new Map();
+const sessionSocketMap = new Map();
 // user
 // 예약 확인
 exports.checkReservation = async (req, res) => {
@@ -42,11 +43,28 @@ exports.checkReservation = async (req, res) => {
       });
     }
 
-    //중복 로그인 확인
+    //중복 로그인 확인 및 동일 브라우저 동시 로그인
     const io = req.app.get('io');
     const userId = user.id;
-    const prevSocketId = userSocketMap.get(userId);
 
+    //동일 브라우저 동시 로그인
+    const sessionId = req.sessionID;
+    const prevSessionSocketId = sessionSocketMap.get(sessionId);
+
+    console.log(sessionSocketMap);
+    console.log(prevSessionSocketId);
+    if (prevSessionSocketId && prevSessionSocketId !== socketId) {
+      const prevSocket = io.sockets.sockets.get(prevSessionSocketId);
+      if (prevSocket) {
+        prevSocket.emit('forceLogout', {
+          message: '이전 로그인 정보가 종료되었습니다.',
+        });
+      }
+      sessionSocketMap.delete(sessionId);
+    }
+
+    //중복 로그인
+    const prevSocketId = userSocketMap.get(userId);
     if (prevSocketId && prevSocketId !== socketId) {
       const prevSocket = io.sockets.sockets.get(prevSocketId);
       if (prevSocket) {
@@ -55,6 +73,8 @@ exports.checkReservation = async (req, res) => {
         });
       }
     }
+
+    sessionSocketMap.set(sessionId, socketId);
     userSocketMap.set(userId, socketId);
 
     const sessionInfo = {
