@@ -210,11 +210,7 @@ exports.requestTicketing = async (req, res) => {
     try {
       const { sendSMS } = require('../utils/SmsSender');
       await sendSMS({
-        ///////////////해당 부분 phoneNumber로 교체/////////////
-
-        to: '01023086047',
-
-        ///////////////////////////////////////////////////////
+        to: phoneNumber,
         text: '[포도티켓] 발권이 완료되었습니다. 공연장에서 티켓을 수령해 주세요.',
       });
     } catch (smsError) {
