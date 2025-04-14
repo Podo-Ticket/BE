@@ -26,29 +26,6 @@ paths:
       responses:
         200:
           description: 스케줄 정보 조회 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  info:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                          description: 스케줄 ID
-                        date_time:
-                          type: string
-                          format: date-time
-                          description: 공연 날짜 및 시간
-                        user:
-                          type: integer
-                          description: 해당 스케줄의 총 예매 인원
-                        booked:
-                          type: integer
-                          description: 예약된 좌석 수
         400:
           description: 잘못된 요청 (play_id 누락)
         500:
