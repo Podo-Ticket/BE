@@ -13,11 +13,17 @@ paths:
               properties:
                 title:
                   type: string
+                location:
+                  type: string
+                runningTime:
+                  type: integer
                 poster:
                   type: string
                   format: binary
               required:
                 - title
+                - location
+                - runningTime
                 - poster
       responses:
         200:
