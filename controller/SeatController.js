@@ -353,7 +353,7 @@ exports.showAudience = async (req, res) => {
   }
 };
 
-// 잠금 확인 팝업
+// 발권된 좌석 확인
 exports.checkSeats = async (req, res) => {
   try {
     const { scheduleId, seats } = req.body; // seats는 { row, number } 형태의 객체 - 인코딩 필요
