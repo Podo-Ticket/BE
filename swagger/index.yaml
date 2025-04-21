@@ -1,6 +1,8 @@
 paths:
   /:
     get:
+      tags:
+        - Main
       summary: 메인화면
       parameters:
         - in: query
