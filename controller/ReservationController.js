@@ -212,7 +212,7 @@ exports.reservation = async (req, res) => {
 // 현장 예매 관리 리스트
 exports.showOnSite = async (req, res) => {
   try {
-    const { scheduleId, name, phoneNumber, approve } = req.query;
+    const { scheduleId, name, phoneNumber } = req.query;
 
     if (!scheduleId) {
       return res.status(400).send({
@@ -234,10 +234,6 @@ exports.showOnSite = async (req, res) => {
       whereClause.phone_number = {
         [Op.like]: `%${phoneNumber}%`,
       };
-    }
-
-    if (approve) {
-      whereClause.approve = approve;
     }
 
     const usersPromises = await OnSite.findAll({
