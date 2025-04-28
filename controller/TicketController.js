@@ -14,7 +14,14 @@ exports.showTicketInfo = async (req, res) => {
           attributes: ['date_time'],
           include: {
             model: Play,
-            attributes: ['title', 'poster', 'location', 'running_time'],
+            attributes: [
+              'title',
+              'poster',
+              'location',
+              'running_time',
+              'en_title',
+              'en_loaction',
+            ],
           },
         },
       }),
