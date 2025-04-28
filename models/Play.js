@@ -31,6 +31,16 @@ const Play = (sequelize) => {
         allowNull: false,
         comment: '관람 시간',
       },
+      en_title: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        comment: '공연 영어 제목',
+      },
+      en_location: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        cooment: '영어 공연 장소',
+      },
     },
     {
       tableName: 'play',

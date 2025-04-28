@@ -2,53 +2,68 @@ const { checkFile } = require('../utils/fileUtil');
 
 const { Play, Schedule } = require('../models');
 
-// 공연 추가
+//공연 추가
 exports.postPlay = async (req, res) => {
+  const transaction = await Play.sequelize.transaction(); // 트랜잭션 시작
   try {
-    const { title, location, runningTime } = req.body;
+    const { title, en_title, location, en_location, price, runningTime } =
+      req.body;
 
-    if (!title) {
-      return res.status(400).send({
-        error: '올바르지 않은 공연 제목',
-      });
+    // schedules는 JSON 문자열로 넘어오기 때문에 파싱
+    const schedules = req.body.schedules ? JSON.parse(req.body.schedules) : [];
+
+    // 필수값 검증
+    if (!title || !en_title || !location || !en_location || !runningTime) {
+      return res.status(400).send({ error: '필수 입력값이 누락되었습니다.' });
     }
 
-    const filePath = checkFile(req.file); // 파일 유무 확인
-
-    await Play.create({
-      title: title,
-      poster: filePath,
-      location: location,
-      running_time: runningTime,
-    });
-
-    res.send({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Internal server error');
-  }
-};
-
-// 공연 일정 추가
-exports.postSchedule = async (req, res) => {
-  try {
-    const { playId, dateTime, availableSeats } = req.body;
-
-    if (!playId || !dateTime || !availableSeats) {
-      return res.status(400).send({
-        error: '올바르지 않은 공연 ID 또는 일정 또는 좌석 수',
-      });
+    if (!Array.isArray(schedules)) {
+      return res
+        .status(400)
+        .send({ error: '스케줄 데이터 형식이 잘못되었습니다.' });
     }
 
-    await Schedule.create({
-      play_id: playId,
-      date_time: dateTime,
-      available_seats: availableSeats,
-    });
+    // 파일 체크
+    const filePath = checkFile(req.file);
 
-    res.send({ suceess: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Internal server error');
+    // Play 테이블 저장
+    const play = await Play.create(
+      {
+        title,
+        en_title,
+        location,
+        en_location,
+        price,
+        running_time: runningTime,
+        poster: filePath,
+      },
+      { transaction }
+    );
+
+    // Schedule 테이블 저장
+    if (schedules.length > 0) {
+      const scheduleData = schedules.map((schedule) => ({
+        play_id: play.id,
+        date_time: schedule.dateTime,
+        available_seats: schedule.availableSeats,
+      }));
+
+      await Schedule.bulkCreate(scheduleData, { transaction });
+    }
+
+    await transaction.commit();
+
+    // 성공 응답
+    res.status(201).send({
+      success: true,
+      playId: play.id,
+      posterUrl: filePath,
+    });
+  } catch (error) {
+    console.error(error);
+    if (transaction) await transaction.rollback();
+    res
+      .status(500)
+      .send({ error: 'Internal server error', message: error.message });
   }
 };
