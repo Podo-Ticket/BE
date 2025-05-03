@@ -20,7 +20,7 @@ exports.showTicketInfo = async (req, res) => {
               'location',
               'running_time',
               'en_title',
-              'en_loaction',
+              'en_location',
             ],
           },
         },
