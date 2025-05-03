@@ -1,53 +1,59 @@
-const { Play, Schedule, Count, sequelize } = require('../models');
-const { Op } = require('sequelize');
+const { Play, Schedule, Count } = require('../models');
 
 // main 화면
 exports.index = async (req, res) => {
-    try {
-        let { playId } = req.query;
+  try {
+    let { playId } = req.query;
 
-        if(!playId) {
-            return res.status(400).send({ 
-                error: "올바르지 않은 공연 ID" 
-            });
-        }
-
-        const schedule = await Schedule.findOne({
-            attributes: ['id', 'date_time', 'play_id'],
-            where: {
-                play_id: playId,
-                date_time: {
-                    [Op.gt]: sequelize.fn('DATE_SUB', sequelize.fn('NOW'), sequelize.literal('INTERVAL 30 MINUTE'))
-                }
-            },
-            order: [
-                [sequelize.fn('ABS', sequelize.fn('TIMESTAMPDIFF', sequelize.literal('MINUTE'), sequelize.fn('NOW'), sequelize.col('date_time'))), 'ASC']
-            ]
-        });
-
-        const play = await Play.findOne({
-            attributes:['title', 'poster'],
-            where: {
-                id: schedule.play_id
-            }
-        });
-
-        if(!play) {
-            return res.status(404).send({ 
-                error: "공연 조회 불가" 
-            });
-        }
-
-        await Count.increment('mainCnt', { where: { id: 1 } });
-
-        res.send({ play: play, schedule: schedule });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Internal server error");
+    if (!playId) {
+      return res.status(400).send({
+        error: '올바르지 않은 공연 ID',
+      });
     }
+
+    const schedule = await Schedule.findAll({
+      attributes: ['id', 'date_time'],
+      include: [
+        {
+          model: Play,
+          attributes: [
+            'id',
+            'title',
+            'poster',
+            'location',
+            'running_time',
+            'en_title',
+            'en_location',
+          ],
+        },
+      ],
+      where: { play_id: playId },
+    });
+
+    if (!schedule) {
+      return res.status(404).send({
+        error: '공연 조회 불가',
+      });
+    }
+
+    const scheduleList = schedule.map((sch) => ({
+      id: sch.id,
+      date_time: sch.date_time,
+    }));
+
+    // await Count.increment('mainCnt', { where: { id: 1 } });
+
+    res.send({
+      play: schedule[0].play,
+      schedule: scheduleList,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal server error');
+  }
 };
 
 // health check
 exports.health = async (req, res) => {
-    res.send("ok");
+  res.send('ok');
 };

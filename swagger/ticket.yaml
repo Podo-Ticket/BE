@@ -1,0 +1,13 @@
+paths:
+  /info:
+    get:
+      tags:
+        - Ticket
+      summary: 티켓 정보
+      responses:
+        200:
+          description: 티켓 정보 조회 성공
+        400:
+          description: 세션 확인
+        500:
+          description: 서버 에러
