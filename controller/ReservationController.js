@@ -419,7 +419,7 @@ exports.cancelTicket = async (req, res) => {
     await User.update(
       { state: 0 },
       {
-        where: { id: userId },
+        where: { id: userId, schedule_id: scheduleId },
       }
     );
 
