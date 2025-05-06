@@ -401,9 +401,9 @@ exports.deleteOnSite = async (req, res) => {
 
 exports.cancelTicket = async (req, res) => {
   try {
-    const { userId, scheduleId } = req.body;
+    const { id, scheduleId } = req.session.userInfo;
 
-    if (!userId || !scheduleId) {
+    if (!id || !scheduleId) {
       return res.status(400).send({
         error: '올바르지 않은 사용자 ID 또는 스케줄 ID입니다.',
       });
@@ -411,7 +411,7 @@ exports.cancelTicket = async (req, res) => {
 
     await Seat.destroy({
       where: {
-        user_id: userId,
+        user_id: id,
         schedule_id: scheduleId,
       },
     });
@@ -419,7 +419,7 @@ exports.cancelTicket = async (req, res) => {
     await User.update(
       { state: 0 },
       {
-        where: { id: userId, schedule_id: scheduleId },
+        where: { id: id, schedule_id: scheduleId },
       }
     );
 
