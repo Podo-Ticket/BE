@@ -398,3 +398,38 @@ exports.deleteOnSite = async (req, res) => {
     res.status(500).send('Internal server error');
   }
 };
+
+exports.cancelTicket = async (req, res) => {
+  try {
+    const { userId, scheduleId } = req.body;
+
+    if (!userId || !scheduleId) {
+      return res.status(400).send({
+        error: '올바르지 않은 사용자 ID 또는 스케줄 ID입니다.',
+      });
+    }
+
+    await Seat.destroy({
+      where: {
+        user_id: userId,
+        schedule_id: scheduleId,
+      },
+    });
+
+    await User.update(
+      { state: 0 },
+      {
+        where: { id: userId },
+      }
+    );
+
+    return res
+      .status(200)
+      .send({ message: '예매가 성공적으로 취소되었습니다.' });
+  } catch (err) {
+    console.error('에러 발생:', err);
+    return res
+      .status(500)
+      .send({ error: '서버 오류로 인해 예매 취소에 실패했습니다.' });
+  }
+};

@@ -6,6 +6,7 @@ const controller = require('../controller/ReservationController');
 // user
 router.get('/', controller.showSchedule);
 router.post('/', controller.reservation);
+router.delete('/', controller.cancelTicket);
 
 // admin
 router.get('/admin', isAdmin, controller.showOnSite);

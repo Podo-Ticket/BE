@@ -51,6 +51,31 @@ paths:
           description: 올바르지 않은 예약 정보
         500:
           description: 서버 에러
+    delete:
+      tags:
+        - Reservation
+      summary: 예매 취소
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+                scheduleId:
+                  type: integer
+              required:
+                - userId
+                - scheduleId
+      responses:
+        200:
+          description: 예매 취소 성공
+        400:
+          description: 올바르지 않은 요청
+        500:
+          description: 서버 에러
   /reservation/admin:
     get:
       tags:
