@@ -16,15 +16,7 @@ exports.index = async (req, res) => {
       include: [
         {
           model: Play,
-          attributes: [
-            'id',
-            'title',
-            'poster',
-            'location',
-            'running_time',
-            'en_title',
-            'en_location',
-          ],
+          attributes: ['id', 'title', 'poster', 'en_title'],
         },
       ],
       where: { play_id: playId },
