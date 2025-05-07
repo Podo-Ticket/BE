@@ -88,7 +88,7 @@ paths:
         200:
           description: 좌석 선택 확인 성공
         400:
-          description: 올바르지 않은 좌석 정보
+          description: 올바르지 않은 좌석 정보 / 유저 삭제
         500:
           description: 서버 에러
   /seat/back:

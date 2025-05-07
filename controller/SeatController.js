@@ -182,6 +182,19 @@ exports.requestTicketing = async (req, res) => {
       delete req.session.userInfo.timerId;
     }
 
+    const user = await User.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!user) {
+      return res.status(400).send({
+        success: false,
+        data: '예매 내역 확인 불가',
+      });
+    }
+
     const updatedSeatCount = await Seat.update(
       { state: true },
       {
