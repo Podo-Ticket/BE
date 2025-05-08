@@ -29,6 +29,20 @@ exports.checkReserved = async (req, res) => {
     const { seats } = req.query; // seats는 { row, number } 형태의 객체 - 인코딩 필요
     const { headCount, id: userId, scheduleId } = req.session.userInfo;
 
+    const user = await User.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      await transaction.rollback();
+      return res.status(400).send({
+        success: false,
+        data: '예매 내역 확인 불가',
+      });
+    }
+
     if (!seats) {
       await transaction.rollback();
       return res.status(400).send({
