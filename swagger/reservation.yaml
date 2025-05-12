@@ -1,0 +1,161 @@
+paths:
+  /reservation:
+    get:
+      tags:
+        - Reservation
+      summary: 현장 예매 - 공연 일자 보여주기
+      parameters:
+        - in: query
+          name: playId
+          schema:
+            type: integer
+          required:
+            - playId
+      responses:
+        200:
+          description: 공연 회차 조회 성공
+        400:
+          description: 올바르지 않은 공연 ID
+        500:
+          description: 서버 에러
+    post:
+      tags:
+        - Reservation
+      summary: 현장 예매
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phoneNumber:
+                  type: string
+                  pattern: '^01\d{1}-\d{3,4}-\d{4}$'
+                  example: '010-1234-5678'
+                headCount:
+                  type: integer
+                scheduleId:
+                  type: integer
+              required:
+                - name
+                - phoneNumber
+                - headCount
+                - scheduleId
+      responses:
+        200:
+          description: 예매 성공
+        400:
+          description: 올바르지 않은 예약 정보
+        500:
+          description: 서버 에러
+    delete:
+      tags:
+        - Reservation
+      summary: 예매 취소
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+                scheduleId:
+                  type: integer
+              required:
+                - userId
+                - scheduleId
+      responses:
+        200:
+          description: 예매 취소 성공
+        400:
+          description: 올바르지 않은 요청
+        500:
+          description: 서버 에러
+  /reservation/admin:
+    get:
+      tags:
+        - Reservation
+      summary: 현장 예매 관리 리스트
+      parameters:
+        - in: query
+          name: scheduleId
+          schema:
+            type: integer
+          required: true
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: phoneNumber
+          schema:
+            type: string
+            pattern: '^01\d{1}-\d{3,4}-\d{4}$'
+            example: '010-1234-5678'
+      responses:
+        200:
+          description: 예매 리스트 조회 성공
+        400:
+          description: 올바르지 않은 공연 일시 ID
+        500:
+          description: 서버 에러
+  /reservation/approve:
+    patch:
+      tags:
+        - Reservation
+      summary: 수락 / 거절
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userIds:
+                  type: array
+                  items:
+                    type: integer
+                scheduleId:
+                  type: integer
+                check:
+                  type: boolean
+              required:
+                - userIds
+                - scheduleId
+      responses:
+        200:
+          description: 수락 / 거절 성공
+        400:
+          description: 올바르지 않은 사용자 ID, 공연 일시 ID, 수락 여부
+        500:
+          description: 서버 에러
+  /reservation/delete:
+    delete:
+      tags:
+        - Reservation
+      summary: 삭제
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userIds:
+                  type: array
+                  items:
+                    type: integer
+              required:
+                - userIds
+      responses:
+        200:
+          description: 삭제 성공
+        400:
+          description: 올바르지 않은 사용자 ID
+        500:
+          description: 서버 에러

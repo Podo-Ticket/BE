@@ -1,0 +1,75 @@
+paths:
+  /play/post:
+    post:
+      tags:
+        - Play
+      summary: 공연 추가
+      description: 공연 기본 정보와 포스터 이미지를 업로드합니다.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: 공연 제목
+                  example: 조제, 호랑이 그리고 물고기들
+                en_title:
+                  type: string
+                  description: 공연 영어 제목
+                  example: Josee, the Tiger and the Fish
+                location:
+                  type: string
+                  description: 공연 장소
+                  example: 광운대학교
+                en_location:
+                  type: string
+                  description: 공연 장소 영어
+                  example: Kwangwoon University
+                price:
+                  type: integer
+                  description: 티켓 가격
+                  example: 30000
+                runningTime:
+                  type: integer
+                  description: 공연 시간 (분 단위)
+                  example: 120
+                schedules:
+                  type: string
+                  description: 공연 일정 배열 (JSON 문자열로 전달)
+                  example: '[{"dateTime":"2025-05-04T13:00:00","availableSeats":100},{"dateTime":"2025-05-05T19:00:00","availableSeats":80}]'
+                poster:
+                  type: string
+                  format: binary
+                  description: 공연 포스터 이미지 파일
+              required:
+                - title
+                - en_title
+                - location
+                - en_location
+                - price
+                - runningTime
+                - poster
+      responses:
+        '201':
+          description: 공연 추가 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  playId:
+                    type: integer
+                    example: 1
+                  posterUrl:
+                    type: string
+                    example: /uploads/20250429_play/poster1700000000000.png
+        '400':
+          description: 필수 입력값 누락 또는 잘못된 요청
+        '500':
+          description: 서버 오류

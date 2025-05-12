@@ -1,0 +1,42 @@
+paths:
+  /admin:
+    get:
+      tags:
+        - Admin
+      summary: 관리자 페이지 로그인(접속)
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          required:
+            - code
+      responses:
+        200:
+          description: 인증 성공
+        400:
+          description: 잘못된 인증코드
+        500:
+          description: 서버 에러
+  /admin/main:
+    get:
+      tags:
+        - Admin
+      summary: 관리자 페이지 메인
+      responses:
+        200:
+          description: 스케줄 정보 조회 성공
+        400:
+          description: 잘못된 요청 (play_id 누락)
+        500:
+          description: 서버 에러
+  /admin/check:
+    get:
+      tags:
+        - Admin
+      summary: 세션 확인
+      responses:
+        200:
+          description: 인증 성공
+        500:
+          description: 서버 에러
