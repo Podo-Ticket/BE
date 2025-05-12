@@ -428,6 +428,20 @@ exports.updateAudience = async (req, res) => {
       });
     }
 
+    const user = await User.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (user.state) {
+      await transaction.rollback();
+      return res.send({
+        success: false,
+        error: '이미 발권한 사용자',
+      });
+    }
+
     // 한 번의 쿼리로 예약 가능 인원 확인
     const scheduleInfo = await Schedule.findOne({
       where: { id: scheduleId },
