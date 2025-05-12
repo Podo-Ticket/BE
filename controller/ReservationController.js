@@ -399,6 +399,7 @@ exports.deleteOnSite = async (req, res) => {
   }
 };
 
+// 예매 취소
 exports.cancelTicket = async (req, res) => {
   try {
     const { id, scheduleId } = req.session.userInfo;

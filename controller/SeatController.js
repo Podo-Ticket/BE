@@ -298,7 +298,6 @@ exports.realTimeSeats = async (req, res) => {
         attributes: ['id', 'row', 'number', 'state', 'user_id', 'lock'],
         where: {
           schedule_id: scheduleId,
-          state: true,
         },
       }),
     ]);
