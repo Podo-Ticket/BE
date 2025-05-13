@@ -491,12 +491,14 @@ exports.updateAudience = async (req, res) => {
         where: {
           id: userId,
         },
-      },
-      { transaction }
+        transaction,
+      }
     );
 
+    await transaction.commit();
     res.send({ success: true });
   } catch (err) {
+    await transaction.rollback();
     console.error(err);
     res.status(500).send('Internal server error');
   }
