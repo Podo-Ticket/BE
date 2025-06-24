@@ -1,8 +1,7 @@
 const { User, Schedule, sequelize, OnSite, Seat } = require('../models');
 const { Op, Sequelize } = require('sequelize');
+const userSocketManager = require('../socket/user');
 
-const userSocketMap = new Map();
-const sessionSocketMap = new Map();
 // user
 // 예약 확인
 exports.checkReservation = async (req, res) => {
@@ -43,36 +42,13 @@ exports.checkReservation = async (req, res) => {
       });
     }
 
-    // 중복 로그인 확인 및 동일 브라우저 동시 로그인
-    const io = req.app.get('io');
-    const userId = user.id;
-    const sessionId = req.sessionID;
-
-    // 공통 로그아웃 처리 함수
-    const forceLogoutBySocketId = (socketId) => {
-      const socket = io.sockets.sockets.get(socketId);
-      if (socket) {
-        socket.emit('forceLogout', {
-          message: '동시 접속이 확인되었습니다.',
-        });
-      }
-    };
-
-    // 1. 동일 브라우저 세션 중복 로그인
-    const prevSessionSocketId = sessionSocketMap.get(sessionId);
-    if (prevSessionSocketId && prevSessionSocketId !== socketId) {
-      forceLogoutBySocketId(prevSessionSocketId);
-      sessionSocketMap.delete(sessionId);
-    }
-
-    // 2. 동일 유저 중복 로그인
-    const prevSocketId = userSocketMap.get(userId);
-    if (prevSocketId && prevSocketId !== socketId) {
-      forceLogoutBySocketId(prevSocketId);
-    }
-
-    sessionSocketMap.set(sessionId, socketId);
-    userSocketMap.set(userId, socketId);
+    // 중복 로그인 및 소켓 관리 로직을 socket/user.js로 위임
+    userSocketManager.handleLogin({
+      req,
+      userId: user.id,
+      sessionId: req.sessionID,
+      socketId,
+    });
 
     const seats = await Seat.findAll({
       where: {

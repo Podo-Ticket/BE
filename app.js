@@ -7,7 +7,7 @@ const cors = require('cors');
 const { sequelize } = require('./models');
 const { swaggerUi, specs } = require('./swagger/swagger');
 const http = require('http');
-const { Server } = require('socket.io');
+const { setupSocket } = require('./socket/index');
 const logger = require('./utils/logger');
 
 app.use(express.urlencoded({ extended: true }));
@@ -101,25 +101,8 @@ sequelize.sync({ force: false }).then(() => {
   // HTTP 서버 생성
   server = http.createServer(app);
 
-  // WebSocket 설정
-  const io = new Server(server, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST'],
-    },
-  });
-
-  // WebSocket 객체를 app에 저장하여 다른 모듈에서 접근할 수 있도록 함
-  app.set('io', io);
-
-  // WebSocket 이벤트 처리
-  io.on('connection', (socket) => {
-    console.log(`사용자 연결됨: ${socket.id}`);
-
-    socket.on('disconnect', () => {
-      console.log(`사용자 연결 해제: ${socket.id}`);
-    });
-  });
+  // socket/index.js에서 소켓 서버 초기화 및 이벤트 핸들러 관리
+  setupSocket(server, app);
 
   // 서버 실행
   server.listen(PORT, () => {

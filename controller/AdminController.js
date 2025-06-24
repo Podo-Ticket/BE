@@ -1,9 +1,10 @@
 const { Schedule, User, Seat, sequelize } = require('../models');
+const { joinAdminRoom } = require('../socket/admin');
 
 // 접속
 exports.enterAdmin = async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, socketId } = req.query;
 
     const adminCode = JSON.parse(process.env.ADMIN_CODE || '[]');
     const admin = adminCode.find((admin) => admin.code === code);
@@ -18,6 +19,8 @@ exports.enterAdmin = async (req, res) => {
       code: admin.code,
       play: admin.play_id,
     };
+
+    joinAdminRoom({ req, socketId, playId: admin.play_id });
 
     res.send({ success: true });
   } catch (err) {
