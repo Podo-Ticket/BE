@@ -1,10 +1,10 @@
 const { getAdminSocketIdsByPlayId } = require('./admin');
 
 // 관리자 room에 실시간 알림 전송 함수
-exports.sendOnsiteReservationAlert = ({ req, playId, user }) => {
-  const io = req.app.get('io');
+exports.sendOnsiteReservationAlert = function (io, playId, user) {
   if (io && playId) {
-    const adminSocketIds = getAdminSocketIdsByPlayId(playId);
+    const room = io.sockets.adapter.rooms.get(String(playId));
+    const adminSocketIds = room ? Array.from(room) : [];
     const message = {
       type: 'onsite-reservation',
       name: user.name,

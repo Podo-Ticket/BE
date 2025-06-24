@@ -19,8 +19,8 @@ exports.enterAdmin = async (req, res) => {
       code: admin.code,
       play: admin.play_id,
     };
-
-    joinAdminRoom({ req, socketId, playId: admin.play_id });
+    const io = req.app.get('io');
+    joinAdminRoom({ req, io, socketId, playId: admin.play_id });
 
     res.send({ success: true });
   } catch (err) {
