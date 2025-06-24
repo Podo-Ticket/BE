@@ -1,5 +1,6 @@
 const { Seat, Schedule, User, OnSite, Count, sequelize } = require('../models');
 const { Op, Transaction } = require('sequelize');
+const { sendOnsiteReservationAlert } = require('../socket/reservation');
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -112,6 +113,7 @@ exports.reservation = async (req, res) => {
       where: { id: scheduleId },
       attributes: [
         'id',
+        'play_id',
         [
           sequelize.literal(
             `available_seats -
@@ -198,6 +200,9 @@ exports.reservation = async (req, res) => {
       headCount: user.head_count,
       scheduleId: user.schedule_id,
     };
+
+    // 관리자 room에 실시간 알림 전송
+    sendOnsiteReservationAlert({ req, playId: scheduleInfo.play_id, user });
 
     await transaction.commit();
     res.send({ success: true, userId: user.id });
