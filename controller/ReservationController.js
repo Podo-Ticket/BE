@@ -217,7 +217,7 @@ exports.reservation = async (req, res) => {
 // 현장 예매 관리 리스트
 exports.showOnSite = async (req, res) => {
   try {
-    const { scheduleId, name, phoneNumber } = req.query;
+    const { scheduleId } = req.query;
 
     if (!scheduleId) {
       return res.status(400).send({
@@ -225,29 +225,18 @@ exports.showOnSite = async (req, res) => {
       });
     }
 
-    const whereClause = {
-      schedule_id: scheduleId,
-    };
-
-    if (name) {
-      whereClause.name = {
-        [Op.like]: `%${name}%`,
-      };
-    }
-
-    if (phoneNumber) {
-      whereClause.phone_number = {
-        [Op.like]: `%${phoneNumber}%`,
-      };
-    }
-
-    const usersPromises = await OnSite.findAll({
-      attributes: ['approve'],
+    const users = await OnSite.findAll({
+      attributes: [],
+      where: {
+        approve: false,
+      },
       include: {
         model: User,
         as: 'user',
         attributes: ['id', 'name', 'phone_number', 'head_count'],
-        where: whereClause,
+        where: {
+          schedule_id: scheduleId,
+        },
         order: [
           ['name', 'ASC'],
           ['phone_number', 'ASC'],
@@ -255,25 +244,7 @@ exports.showOnSite = async (req, res) => {
       },
     });
 
-    const approvalCntPromise = await OnSite.count({
-      where: {
-        approve: true,
-      },
-      include: [
-        {
-          model: User,
-          as: 'user',
-          where: whereClause,
-        },
-      ],
-    });
-
-    const [users, approvalCnt] = await Promise.all([
-      usersPromises,
-      approvalCntPromise,
-    ]);
-
-    res.send({ total: users.length, approvalCnt: approvalCnt, users: users });
+    res.send({ users });
   } catch (err) {
     console.error(err);
     res.status(500).send('Internal server error');
