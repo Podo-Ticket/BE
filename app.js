@@ -9,6 +9,7 @@ const { swaggerUi, specs } = require('./swagger/swagger');
 const http = require('http');
 const { setupSocket } = require('./socket/index');
 const logger = require('./utils/logger');
+const sessionMiddleware = require('./utils/session');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -39,19 +40,7 @@ app.use((req, res, next) => {
 });
 
 // 세션 설정
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET_KEY,
-    resave: false,
-    saveUninitialized: true,
-    store: new RedisStore({ client: redisClient }),
-    cookie: {
-      name: 'session_ID',
-      httpOnly: true,
-      maxAge: 90 * 60 * 1000, // 90분 동안 세션 유지
-    },
-  })
-);
+app.use(sessionMiddleware);
 
 // swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

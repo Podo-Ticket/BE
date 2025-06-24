@@ -1,6 +1,7 @@
 const { Seat, Schedule, User, OnSite, Count, sequelize } = require('../models');
 const { Op, Transaction } = require('sequelize');
 const { sendOnsiteReservationAlert } = require('../socket/reservation');
+const { getAdminSocketIdsByPlayId } = require('../socket/admin');
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -202,7 +203,9 @@ exports.reservation = async (req, res) => {
     };
 
     // 관리자 room에 실시간 알림 전송
-    sendOnsiteReservationAlert({ req, playId: scheduleInfo.play_id, user });
+    const playId = scheduleInfo.play_id;
+    const io = req.app.get('io');
+    sendOnsiteReservationAlert(io, playId, user);
 
     await transaction.commit();
     res.send({ success: true, userId: user.id });
