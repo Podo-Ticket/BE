@@ -1,7 +1,12 @@
 const { Seat, Schedule, User, OnSite, Count, sequelize } = require('../models');
 const { Op, Transaction } = require('sequelize');
-const { sendOnsiteReservationAlert } = require('../socket/reservation');
+const {
+  sendOnsiteReservationAlert,
+  sendProcessOnsiteRequestAlert,
+  sendNoRequestsMessage,
+} = require('../socket/reservation');
 const { getAdminSocketIdsByPlayId } = require('../socket/admin');
+const socketQueue = require('../utils/socketQueue');
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -272,8 +277,12 @@ exports.approveOnSite = async (req, res) => {
           type: 'reject',
           message: `사용자 ${userId}님의 현장 신청이 거절되었습니다.`,
         };
-        console.log(`Sending WebSocket message to user:${userId}`, message); // 로그 추가
-        io.emit(`user:${userId}`, message);
+        console.log(`Sending WebSocket message to user:${userId}`, message);
+        socketQueue.enqueue({
+          io,
+          event: `user:${userId}`,
+          data: message,
+        });
       });
 
       await Promise.all([
@@ -311,7 +320,7 @@ exports.approveOnSite = async (req, res) => {
       }),
       Schedule.findOne({
         where: { id: scheduleId },
-        attributes: ['available_seats'],
+        attributes: ['available_seats', 'play_id'],
       }),
     ]);
 
@@ -341,8 +350,32 @@ exports.approveOnSite = async (req, res) => {
         message: `사용자 ${userId}님의 현장 신청이 승인되었습니다.`,
       };
       console.log(`Sending WebSocket message to user:${userId}`, message);
-      io.emit(`user:${userId}`, message);
+      socketQueue.enqueue({
+        io,
+        event: `user:${userId}`,
+        data: message,
+      });
     });
+
+    sendProcessOnsiteRequestAlert(io, schedule.play_id, userIds, scheduleId);
+
+    // 남은 현장 예매 요청이 있는지 확인하고 관리자에게 메시지 전송
+    const remainingRequests = await OnSite.count({
+      where: {
+        approve: false,
+      },
+      include: {
+        model: User,
+        as: 'user',
+        where: {
+          schedule_id: scheduleId,
+        },
+      },
+    });
+
+    if (remainingRequests === 0) {
+      sendNoRequestsMessage(io, schedule.play_id);
+    }
 
     res.send({ accept: true });
   } catch (err) {
