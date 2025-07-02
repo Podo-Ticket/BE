@@ -35,7 +35,7 @@ exports.sendProcessOnsiteRequestAlert = function (
       message: '현장 예매 요청 처리가 완료되었습니다.',
     };
     adminSocketIds.forEach((socketId) => {
-      io.to(socketId).emit('admin:onsite-reservation', message);
+      io.to(socketId).emit('admin:process-onsite-request', message);
     });
   }
 };
@@ -49,7 +49,7 @@ exports.sendNoRequestsMessage = function (io, playId) {
       message: '현재 처리할 현장 예매 요청이 없습니다.',
     };
     adminSocketIds.forEach((socketId) => {
-      io.to(socketId).emit('admin:onsite-reservation', message);
+      io.to(socketId).emit('admin:no-onsite-requests', message);
     });
   }
 };
