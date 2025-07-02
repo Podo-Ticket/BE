@@ -1,5 +1,4 @@
 const { getAdminSocketIdsByPlayId } = require('./admin');
-const socketQueue = require('../utils/socketQueue');
 
 // 관리자 room에 실시간 알림 전송 함수
 exports.sendOnsiteReservationAlert = function (io, playId, user) {
