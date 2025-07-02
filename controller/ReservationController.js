@@ -6,7 +6,6 @@ const {
   sendNoRequestsMessage,
 } = require('../socket/reservation');
 const { getAdminSocketIdsByPlayId } = require('../socket/admin');
-const socketQueue = require('../utils/socketQueue');
 
 // user
 // 현장 예매 - 공연 회차 보여주기
@@ -278,11 +277,7 @@ exports.approveOnSite = async (req, res) => {
           message: `사용자 ${userId}님의 현장 신청이 거절되었습니다.`,
         };
         console.log(`Sending WebSocket message to user:${userId}`, message);
-        socketQueue.enqueue({
-          io,
-          event: `user:${userId}`,
-          data: message,
-        });
+        io.emit(`user:${userId}`, message);
       });
 
       await Promise.all([
@@ -350,11 +345,7 @@ exports.approveOnSite = async (req, res) => {
         message: `사용자 ${userId}님의 현장 신청이 승인되었습니다.`,
       };
       console.log(`Sending WebSocket message to user:${userId}`, message);
-      socketQueue.enqueue({
-        io,
-        event: `user:${userId}`,
-        data: message,
-      });
+      io.emit(`user:${userId}`, message);
     });
 
     sendProcessOnsiteRequestAlert(io, schedule.play_id, userIds, scheduleId);
