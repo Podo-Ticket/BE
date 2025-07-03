@@ -288,6 +288,23 @@ exports.approveOnSite = async (req, res) => {
           where: { id: { [Op.in]: userIds } },
         }),
       ]);
+      // 남은 현장 예매 요청이 있는지 확인하고 관리자에게 메시지 전송
+      const remainingRequests = await OnSite.count({
+        where: {
+          approve: false,
+        },
+        include: {
+          model: User,
+          as: 'user',
+          where: {
+            schedule_id: scheduleId,
+          },
+        },
+      });
+
+      if (remainingRequests === 0) {
+        sendNoRequestsMessage(io, schedule.play_id);
+      }
 
       return res.send({ accept: false });
     }
