@@ -303,7 +303,8 @@ exports.approveOnSite = async (req, res) => {
       });
 
       if (remainingRequests === 0) {
-        sendNoRequestsMessage(io, schedule.play_id);
+        fix/onsite_reservation
+        sendNoRequestsMessage(io, scheduleId);
       }
 
       return res.send({ accept: false });
