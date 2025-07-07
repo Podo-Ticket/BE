@@ -303,7 +303,6 @@ exports.approveOnSite = async (req, res) => {
       });
 
       if (remainingRequests === 0) {
-        fix/onsite_reservation
         sendNoRequestsMessage(io, scheduleId);
       }
 
