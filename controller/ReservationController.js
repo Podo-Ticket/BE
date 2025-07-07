@@ -303,7 +303,7 @@ exports.approveOnSite = async (req, res) => {
       });
 
       if (remainingRequests === 0) {
-        sendNoRequestsMessage(io, schedule.play_id);
+        sendNoRequestsMessage(io, scheduleId);
       }
 
       return res.send({ accept: false });
