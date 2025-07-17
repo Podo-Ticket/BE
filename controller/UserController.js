@@ -1,6 +1,7 @@
 const { User, Schedule, sequelize, OnSite, Seat } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 const userSocketManager = require('../socket/user');
+const reservationFlowTime = require('../utils/memoryStore');
 
 // user
 // 예약 확인
@@ -80,6 +81,10 @@ exports.checkReservation = async (req, res) => {
         data: '이미 좌석을 선택한 사용자',
       });
     }
+    if (!reservationFlowTime[user.id]) {
+      reservationFlowTime[user.id] = {};
+    }
+    reservationFlowTime[user.id].checkReservationTime = new Date();
 
     return res.send({ success: true });
   } catch (err) {

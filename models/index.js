@@ -29,6 +29,7 @@ const Play = require('./Play')(sequelize);
 const Schedule = require('./Schedule')(sequelize);
 const OnSite = require('./OnSite')(sequelize);
 const Count = require('./Count')(sequelize);
+const ReservationFlowTime = require('./ReservationFlowTime')(sequelize);
 
 // 모델간의 관계 설정
 // Play : Schedule = 1 : N
@@ -75,6 +76,7 @@ db.Play = Play;
 db.Schedule = Schedule;
 db.OnSite = OnSite;
 db.Count = Count;
+db.ReservationFlowTime = ReservationFlowTime;
 
 db.sequelize = sequelize;
 

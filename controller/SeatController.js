@@ -1,5 +1,14 @@
-const { Seat, Schedule, Play, User, Count, sequelize } = require('../models');
+const {
+  Seat,
+  Schedule,
+  Play,
+  User,
+  Count,
+  ReservationFlowTime,
+  sequelize,
+} = require('../models');
 const { Op, Transaction } = require('sequelize');
+const reservationFlowTime = require('../utils/memoryStore');
 
 // user
 // 좌석 화면 - 예약된 좌석만 전달
@@ -141,6 +150,11 @@ exports.checkReserved = async (req, res) => {
 
     req.session.userInfo.timerId = timerId.toString();
 
+    if (!reservationFlowTime[userId]) {
+      reservationFlowTime[userId] = {};
+    }
+    reservationFlowTime[userId].seatSelectTime = new Date();
+
     return res.send({
       success: true,
       seats: parsedSeats,
@@ -231,6 +245,33 @@ exports.requestTicketing = async (req, res) => {
     await User.update({ state: true }, { where: { id: id }, transaction });
 
     await transaction.commit();
+    if (!reservationFlowTime[id]) {
+      reservationFlowTime[id] = {};
+    }
+    reservationFlowTime[id].ticketingTime = new Date();
+
+    // 모든 정보가 다 있을 때만 DB에 저장
+    const flow = reservationFlowTime[id];
+    if (
+      flow &&
+      flow.checkReservationTime &&
+      flow.seatSelectTime &&
+      flow.ticketingTime
+    ) {
+      await ReservationFlowTime.create({
+        userId: user.id,
+        checkReservationAt: flow.checkReservationTime,
+        seatSelectedAt: flow.seatSelectTime,
+        issuedAt: flow.ticketingTime,
+        totalDuration: Math.floor(
+          (flow.ticketingTime.getTime() - flow.checkReservationTime.getTime()) /
+            1000
+        ),
+      });
+      // 메모리에서 삭제
+      delete reservationFlowTime[user.id];
+    }
+
     res.send({ success: true });
   } catch (err) {
     await transaction.rollback();
